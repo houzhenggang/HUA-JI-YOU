@@ -32,3 +32,7 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan
 
 1. 确定实现步骤，分五步实现
 2. sniffer写了一些，完成度大概70%
+
+7.13更新：
+
+1. sniffer完成，实现效果，可以打印捕获的数据包内容，如协议类型，MAC和IP地址等
