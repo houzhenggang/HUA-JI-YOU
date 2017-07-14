@@ -1,60 +1,28 @@
 #include "head.h"
+#include <pthread.h> //多线程
 
-//抓包成功之后的回调函数，用于处理数据
+//多线程的锁对象
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+//多线程的参数传递
+struct pcap_arg {
+    struct pcap *p;
+    int cnt;
+    void (*callback)(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet);
+    u_char *user;
+};
+
+//调用线程时的接口
+void *start(void *arg) {
+    pthread_mutex_lock(&mutex);
+    struct pcap_arg *real_arg;
+    real_arg = (struct pcap_arg *)arg; //接收参数
+    pcap_loop(real_arg->p, real_arg->cnt, real_arg->callback, real_arg->user); //循环发包，-1表示无限循环
+}
+
 void proc_pkt(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) {
-    //第一层处理MAC地址
-    ethernet_header *pEther;
-    ip_header *pIpv4;
-    arp_header *pArp;
-    pEther = (ethernet_header *)packet; //类型强制转换，便于输出信息
-    printf("-------------------------------------\n");
-    print_type(ntohs(pEther->eth_type));
-    printf("eth src MAC address is: ");
-    print_mac(pEther->SRC_mac);  
-    printf("eth des MAC address is: ");
-    print_mac(pEther->DST_mac);
-    //第二层处理IP地址
-    if (ntohs(pEther->eth_type) == EPT_IPv4) {
-        pIpv4 = (ip_header *)pEther->data;
-        print_protocol(pIpv4->protocol_type);
-        struct in_addr ip_addr;
-        char *src_ip, *des_ip;
-        ip_addr.s_addr = pIpv4->sour_ip;
-        src_ip = inet_ntoa(ip_addr);
-        printf("src IP address is: %s\n", src_ip);
-        ip_addr.s_addr = pIpv4->dest_ip;
-        des_ip = inet_ntoa(ip_addr);
-        printf("des IP address is: %s\n", des_ip);
-        //第三层处理端口
-        if (pIpv4->protocol_type == PROTOCOL_TCP) {
-            tcp_header *pTcp;
-            pTcp = (tcp_header *)pIpv4->data;
-            printf("src port address is: %hu\n", ntohs(pTcp->sour_port));
-            printf("des port address is: %hu\n", ntohs(pTcp->dest_port));
-        }
-        else if (pIpv4->protocol_type == PROTOCOL_UDP) {
-            udp_header *pUdp;
-            pUdp = (udp_header *)pIpv4->data;
-            printf("src port address is: %hu\n", ntohs(pUdp->sour_port));
-            printf("des port address is: %hu\n", ntohs(pUdp->dest_port));
-        }
-    }
-    //第二层处理ARP包
-    else if (ntohs(pEther->eth_type) == EPT_ARP) {
-        pArp = (arp_header *)pEther->data;
-        printf("src MAC address is: ");
-        print_mac(pArp->src_mac);
-        printf("eth des MAC address is: ");
-        print_mac(pArp->dest_mac);
-        struct in_addr ip_addr;
-        char *src_ip, *des_ip;
-        ip_addr.s_addr = pIpv4->sour_ip;
-        src_ip = inet_ntoa(ip_addr);
-        printf("src IP address is: %s\n", src_ip);
-        ip_addr.s_addr = pIpv4->dest_ip;
-        des_ip = inet_ntoa(ip_addr);
-        printf("des IP address is: %s\n", des_ip);
-    }
+    pcap_dump(user, hp, packet);
+    printf("Jacked a packet with length of [%d]\n", hp->len);
 }
 
 int main(int argc, char *argv[]) {
@@ -65,14 +33,14 @@ int main(int argc, char *argv[]) {
     char *net; //存储点分十进制的ip地址
     char *real_mask; //存储点分十进制的mask
     struct in_addr addr_net; //存储地址的结构
-    pcap_t *handle; //获得用于捕获网络数据包的数据包捕获描述字
+    pcap_t *handle; //会话句柄
     int to_ms = 60; //超时时间
     int retcode; //判定代码
     struct bpf_program filter; //已编译好的过滤表达式结构
     char filter_app[40]; //存储过滤表达式
     if (argv[1] != NULL && !strcmp(argv[1], "-h")) {
-        printf("Instant analysis sniffer:\n");
-        printf("This sniffer can analyze the data instantly.\n");
+        printf("Multithreading-fast sniffer\n");
+        printf("This sniffer will only output the data to packet.pcap, but runs fuster.\n");
         printf("Usage: ./sniffer + \"[pcap filter]\"\n");
         printf("[pcap filter] format:\n");
         printf("\tdst [ip]: Capturing packets which destination ip is [ip].\n");
@@ -116,8 +84,34 @@ int main(int argc, char *argv[]) {
     //设置过滤
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
+    //设置输出文件
+    pcap_dumper_t *out_pcap;
+    out_pcap  = pcap_dump_open(handle, "packet.pcap");
+    //设置多线程
+    void *retival;
+    pthread_t thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8;
+    int ret_thread1, ret_thread2, ret_thread3, ret_thread4, ret_thread5, ret_thread6, ret_thread7, ret_thread8;
+    struct pcap_arg arg;
+    arg.p = handle, arg.cnt = -1, arg.callback = &proc_pkt, arg.user = (u_char *)out_pcap;
+    ret_thread1 = pthread_create(&thread1, NULL, (void *)start, (void *)&arg);
+    ret_thread2 = pthread_create(&thread2, NULL, (void *)start, (void *)&arg);
+    ret_thread3 = pthread_create(&thread3, NULL, (void *)start, (void *)&arg);
+    ret_thread4 = pthread_create(&thread4, NULL, (void *)start, (void *)&arg);
+    ret_thread5 = pthread_create(&thread5, NULL, (void *)start, (void *)&arg);
+    ret_thread6 = pthread_create(&thread6, NULL, (void *)start, (void *)&arg);
+    ret_thread7 = pthread_create(&thread7, NULL, (void *)start, (void *)&arg);
+    ret_thread8 = pthread_create(&thread8, NULL, (void *)start, (void *)&arg);
     printf("\nstart:\n\n");
-    pcap_loop(handle, -1, proc_pkt, NULL);
+    pthread_join(thread1, &retival);
+    pthread_join(thread2, &retival);
+    pthread_join(thread3, &retival);
+    pthread_join(thread4, &retival);
+    pthread_join(thread5, &retival);
+    pthread_join(thread6, &retival);
+    pthread_join(thread7, &retival);
+    pthread_join(thread8, &retival);
+    pcap_dump_flush(out_pcap);
     pcap_close(handle);
+    pcap_dump_close(out_pcap);
     return 0;
 }
