@@ -45,3 +45,7 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan
 7.15中午修复：
 
 1. 修复了Sniffer在抓取ARP包时的bug，更改了一下ARP和IP数据包头部结构的定义
+
+7.16更新：
+
+1. 初步写了个Attacker，然而目前还有bug.

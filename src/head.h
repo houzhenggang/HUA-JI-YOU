@@ -57,7 +57,7 @@ typedef struct {
     u_short protocol_type;
     u_char hardware_len;
     u_char protocol_len;
-    u_short aro_op;
+    u_short arp_option;
     u_char src_mac[6];
     u_char src_ip[4];
     u_char dest_mac[6];
