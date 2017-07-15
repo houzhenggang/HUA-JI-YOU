@@ -17,14 +17,10 @@ void proc_pkt(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) 
     if (ntohs(pEther->eth_type) == EPT_IPv4) {
         pIpv4 = (ip_header *)pEther->data;
         print_protocol(pIpv4->protocol_type);
-        struct in_addr ip_addr;
-        char *src_ip, *des_ip;
-        ip_addr.s_addr = pIpv4->sour_ip;
-        src_ip = inet_ntoa(ip_addr);
-        printf("src IP address is: %s\n", src_ip);
-        ip_addr.s_addr = pIpv4->dest_ip;
-        des_ip = inet_ntoa(ip_addr);
-        printf("des IP address is: %s\n", des_ip);
+        printf("src IP address is: ");
+        print_ip(pIpv4->src_ip);
+        printf("des IP address is: ");
+        print_ip(pIpv4->dest_ip);
         //第三层处理端口
         if (pIpv4->protocol_type == PROTOCOL_TCP) {
             tcp_header *pTcp;
@@ -46,14 +42,10 @@ void proc_pkt(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) 
         print_mac(pArp->src_mac);
         printf("eth des MAC address is: ");
         print_mac(pArp->dest_mac);
-        struct in_addr ip_addr;
-        char *src_ip, *des_ip;
-        ip_addr.s_addr = pIpv4->sour_ip;
-        src_ip = inet_ntoa(ip_addr);
-        printf("src IP address is: %s\n", src_ip);
-        ip_addr.s_addr = pIpv4->dest_ip;
-        des_ip = inet_ntoa(ip_addr);
-        printf("des IP address is: %s\n", des_ip);
+        printf("src IP address is: ");
+        print_ip(pArp->src_ip);
+        printf("des IP address is: ");
+        print_ip(pArp->dest_ip);
     }
 }
 

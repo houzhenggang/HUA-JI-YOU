@@ -44,8 +44,8 @@ typedef struct {
     u_char TTL;
     u_char protocol_type;
     u_short check_sum;
-    u_int sour_ip;
-    u_int dest_ip;
+    u_char src_ip[4];
+    u_char dest_ip[4];
     u_char data[0];
 } ip_header;
 
@@ -57,9 +57,9 @@ typedef struct {
     u_char protocol_len;
     u_short aro_op;
     u_char src_mac[6];
-    u_long src_ip;
+    u_char src_ip[4];
     u_char dest_mac[6];
-    u_long dest_ip;
+    u_char dest_ip[4];
     u_char data[0];
 } arp_header;
 
@@ -103,6 +103,16 @@ void print_mac(u_char *mac) {
         if (mac[i] < 16) printf("0");
         printf("%x", mac[i]);
         if (i < 5) printf(":");
+    }
+    printf("\n");
+}
+
+//打印IP地址
+void print_ip(u_char *ip) {
+    int i;
+    for (i = 0; i < 4; i++) {
+        printf("%d", ip[i]);
+        if (i < 3) printf(".");
     }
     printf("\n");
 }

