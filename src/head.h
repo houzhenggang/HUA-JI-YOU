@@ -6,6 +6,7 @@
 #include <sys/types.h> //create socket
 #include <sys/socket.h> //create socket
 #include <net/ethernet.h> //data structure of ethernet frame
+#include <net/if.h>
 #include <netinet/ether.h> //tramsform ethernet frame to ASCII
 #include <netinet/if_ether.h> //data structure of ARP package
 #include <netinet/ip.h> //original ip.h
@@ -15,6 +16,7 @@
 #include <arpa/inet.h> //主机字节至网络字节顺序转换函数定义
 #include <netpacket/packet.h> //供AF_PACKET socket使用的sockaddr结构定义
 #include <pcap.h> //libpacp库
+#include <unistd.h> //延时用，制造效果
 
 //以太网数据包类型
 #define EPT_IPv4    0x0800 //type: IPv4
@@ -124,4 +126,12 @@ void print_protocol(u_char protocol_type) {
         case PROTOCOL_UDP: printf("protocol type: UDP\n"); break;
         default: printf("Unknown type\n");
     }
+}
+
+void loading(void) {
+    for (int i = 1; i < 10; i++) {
+        printf(".");
+        usleep(1e5);
+    }
+    printf("\n");
 }
