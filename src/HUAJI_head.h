@@ -1,34 +1,30 @@
-//公共头文件
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h> //create socket
-#include <sys/socket.h> //create socket
 #include <net/ethernet.h> //data structure of ethernet frame
-#include <net/if.h>
+#include <net/if.h> 
 #include <netinet/ether.h> //tramsform ethernet frame to ASCII
 #include <netinet/if_ether.h> //data structure of ARP package
 #include <netinet/ip.h> //original ip.h
 #include <linux/if.h> //a head file write by hacker about socket
-#include <netinet/in.h> //端口宏定义，网络字节转换
-#include <netdb.h> //主机相关
-#include <arpa/inet.h> //主机字节至网络字节顺序转换函数定义
-#include <netpacket/packet.h> //供AF_PACKET socket使用的sockaddr结构定义
-#include <pcap.h> //libpacp库
-#include <unistd.h> //延时用，制造效果
+#include <netinet/in.h> //inet_ntoa
+#include <netdb.h> //about my device
+#include <arpa/inet.h> //htons.ntohs
+#include <pcap.h> //libpacp
+#include <unistd.h> //delay
 
-//以太网数据包类型
+//ethernet type
 #define EPT_IPv4    0x0800 //type: IPv4
 #define EPT_IPv6    0x86dd //type: IPv6
 #define EPT_ARP     0x0806 //type: ARP
 #define EPT_RARP    0x8035 //type: RARP
 
-//传输协议类型
+//protocol type
 #define PROTOCOL_TCP    0x06 //type: TCP
 #define PROTOCOL_UDP    0x11 //type: UDP
 
-//以太网帧头部
+//ethernet head
 typedef struct {
     u_char DST_mac[6];
     u_char SRC_mac[6];
@@ -36,7 +32,7 @@ typedef struct {
     u_char data[0];
 } ethernet_header;
 
-//ip数据包头部
+//ip packet head
 typedef struct {
     u_char verson_head;
     u_char type_of_service;
@@ -51,7 +47,7 @@ typedef struct {
     u_char data[0];
 } ip_header;
 
-//ARP头部
+//ARP packet head
 typedef struct {
     u_short hardware_type;
     u_short protocol_type;
@@ -65,7 +61,7 @@ typedef struct {
     u_char data[0];
 } arp_header;
 
-//TCP头部
+//TCP packet head
 typedef struct {
     u_short sour_port;
     u_short dest_port;
@@ -78,7 +74,7 @@ typedef struct {
     u_char data[0];
 } tcp_header;
 
-//UDP头部
+//UDP packet head
 typedef struct {
     u_short sour_port;
     u_short dest_port;
@@ -87,7 +83,15 @@ typedef struct {
     u_char data[0];
 } udp_header;
 
-//打印数据包类型
+//passward datas
+typedef struct {
+    char srcip[16];
+    char desip[16];
+    char username[50];
+    char password[50];
+} Sniffer_Result;
+
+//print type
 void print_type(u_short type) {
     switch (type) {
         case EPT_IPv4: printf("eth type: IPv4\n"); break;
@@ -98,7 +102,7 @@ void print_type(u_short type) {
     }
 }
 
-//打印MAC地址
+//print mac address
 void print_mac(u_char *mac) {
     int i;
     for (i = 0; i < 6; i++) {
@@ -109,7 +113,7 @@ void print_mac(u_char *mac) {
     printf("\n");
 }
 
-//打印IP地址
+//print ip address
 void print_ip(u_char *ip) {
     int i;
     for (i = 0; i < 4; i++) {
@@ -119,7 +123,7 @@ void print_ip(u_char *ip) {
     printf("\n");
 }
 
-//打印传输协议类型
+//print protocol address
 void print_protocol(u_char protocol_type) {
     switch (protocol_type) {
         case PROTOCOL_TCP: printf("protocol type: TCP\n"); break;
@@ -128,10 +132,24 @@ void print_protocol(u_char protocol_type) {
     }
 }
 
+//loading delay(just decorations)
 void loading(void) {
-    for (int i = 1; i < 6; i++) {
+    for (int i = 0; i < 6; i++) {
         printf(".");
         usleep(3e5);
     }
     printf(" Done!\n");
+}
+
+//get device
+char* getdev(char *dev, char *errbuf) {
+    printf("Finding device\n");
+    dev = pcap_lookupdev(errbuf); //返回寻找到的第一个网络设备的指针
+    if (dev == NULL) {
+        printf("%s\n", errbuf);
+        exit(1);
+    }
+    loading();
+    printf("The net device is %s\n", dev);
+    return dev;
 }

