@@ -31,7 +31,7 @@ Now, let's do something interesting.
 
 ### Attacker
 
-A tool to sent fake ARP packet to modify the ARP cache in your victim's computer.Through this tool, you can:
+A tool to send fake ARP packet to modify the ARP cache in your victim's computer.Through this tool, you can:
 
 * Break his network.
 * "Repair" his network. ( in fact, his network is in your power ).【Coming soon】
