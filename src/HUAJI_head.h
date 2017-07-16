@@ -138,7 +138,7 @@ void loading(void) {
         printf(".");
         usleep(3e5);
     }
-    printf(" Done!\n");
+    printf(" Done!\n\n");
 }
 
 //get device

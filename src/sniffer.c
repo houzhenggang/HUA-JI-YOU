@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
     /* help informations */
     if (argv[1] != NULL && !strcmp(argv[1], "-h")) {
-        printf("Usage: ./Sniffer + \"[pcap filter]\"\n");
+        printf("Usage: ./Sniffer + \"[pcap filter expression]\"\n");
         printf("[pcap filter] format:\n");
         printf("\tdst [ip]: Capturing packets which destination ip is [ip].\n");
         printf("\tsrc [ip]: Capturing packets which source ip is [ip].\n");

@@ -4,8 +4,50 @@ A small tool to launch a Man-in-the-middle attack, and HUA JI your victims.
 
 ## ------------------Features------------------
 
-Coming soon......
+### Sniffer
 
+A small tool to capturing packet and analyze the data, and you can use pcap filter expression to get specific packet.
+
+You can use `./Sniffer -h` to get help.
+
+usage: `./Sniffer + "[pcap filter expression]"`
+
+[pcap filter] format:
+
+* `dst [ip]`: Capturing packets which destination ip is [ip].
+* `src [ip]`: Capturing packets which source ip is [ip].
+* `host [ip]`: Capturing packets which source ip is [ip] or destination ip is [ip].
+* `dst port [port]`: Capturing packets which destination port is [port].
+* `src port [port]`: Capturing packets which source port is [port].
+* `port [type]`: ip, ip6, arp, rarp, atalk, aarp, decnet, iso, stp, ipx, etc.
+* `[proto type]`: tcp, udp, icmp, etc.
+* `Logical operators`: and, or, not.
+
+for more information, please check [here](http://www.tcpdump.org/manpages/pcap-filter.7.html)
+
+Use this tool to get others'IP or MAC, and selete your victim.
+
+Now, let's do something interesting.
+
+### Attacker
+
+A tool to sent fake ARP packet to modify the ARP cache in your victim's computer.Through this tool, you can:
+
+* Break his network.
+* "Repair" his network. ( in fact, his network is in your power ).【Coming soon】
+* Add a window which says "Big Brother is watching you!" when he open a web page.【Coming soon】
+* Change all the picture in his web page to HUAJI.【Coming soon】
+* Get his passward in http packet.【Coming soon】
+
+Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launch an attack to your victim to break his network.
+
+Then enter a number to choose a mode to do some interesting snake operate.
+
+***Attention: if you don't know how to get your MAC, enter this in command line: `ip a`, then you can find your device's MAC and IP address***
+
+![](/HUAJI.jpg)
+
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
 ## ----------开发日志（开发中）----------
 
 开发开始时间：2017.7.12
@@ -53,3 +95,5 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan
 7.16中午更新：
 
 1. 改了下Attacker，断网功能完成
+2. 优化Attacker和Sniffer的代码，删掉了Sniffer_dump
+3. 写了个大致的文档
