@@ -12,13 +12,13 @@ You can use `./Sniffer -h` to get help.
 
 usage: `./Sniffer + "[pcap filter expression]"`
 
-[pcap filter] format:
+[pcap filter expression] format:
 
-* `dst [ip]`: Capturing packets which destination ip is [ip].
-* `src [ip]`: Capturing packets which source ip is [ip].
-* `host [ip]`: Capturing packets which source ip is [ip] or destination ip is [ip].
-* `dst port [port]`: Capturing packets which destination port is [port].
-* `src port [port]`: Capturing packets which source port is [port].
+* `dst [ip]`: Destination ip is [ip].
+* `src [ip]`: Source ip is [ip].
+* `host [ip]`: Source ip is [ip] or destination ip is [ip].
+* `dst port [port]`: Destination port is [port].
+* `src port [port]`: Source port is [port].
 * `port [type]`: ip, ip6, arp, rarp, atalk, aarp, decnet, iso, stp, ipx, etc.
 * `[proto type]`: tcp, udp, icmp, etc.
 * `Logical operators`: and, or, not.
