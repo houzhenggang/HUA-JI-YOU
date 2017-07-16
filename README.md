@@ -25,7 +25,7 @@ usage: `./Sniffer + "[pcap filter expression]"`
 
 for more information, please check [here](http://www.tcpdump.org/manpages/pcap-filter.7.html)
 
-Use this tool to get others'IP or MAC, and selete your victim.
+Use this tool to get others'IP or MAC, and choose your victim.
 
 Now, let's do something interesting.
 
