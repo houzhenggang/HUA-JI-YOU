@@ -129,9 +129,9 @@ void print_protocol(u_char protocol_type) {
 }
 
 void loading(void) {
-    for (int i = 1; i < 10; i++) {
+    for (int i = 1; i < 6; i++) {
         printf(".");
-        usleep(1e5);
+        usleep(3e5);
     }
-    printf("\n");
+    printf(" Done!\n");
 }
