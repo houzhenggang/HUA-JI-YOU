@@ -2,6 +2,14 @@
 
 A small tool to launch a Man-in-the-middle attack, and HUA JI your victims.
 
+Operating environment: Linux command line.
+
+Dependent package: `libpcap`.
+
+Attention: Please run as **root**!
+
+LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
+
 ## ------------------Features------------------
 
 ### Sniffer
