@@ -8,7 +8,7 @@ Dependent package: `libpcap`.
 
 Attention: Please run as **root**!
 
-**Some function isn't available when your victim visit the website using HTTPS encryption
+Some function isn't available when your victim visit the website using HTTPS encryption
 
 LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
