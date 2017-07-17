@@ -51,7 +51,7 @@ Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launc
 
 Then enter a number to choose a mode to do some interesting snake operate.
 
-***Attention: if you don't know how to get your MAC, enter this in command line: `ip a`, then you can find your device's MAC and IP address***
+***Attention: if you don't know how to get your MAC, enter this in command line: `ip a`, then you can find your device's MAC and IP address.***
 
 ![](/HUAJI.jpg)
 
