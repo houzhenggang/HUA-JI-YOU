@@ -8,7 +8,11 @@ Dependent package: `libpcap`.
 
 Attention: Please run as **root**!
 
+**Some function isn't available when your victim visit the website using HTTPS encryption
+
 LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
+
+*If you find a bug, please write a issue.*
 
 ## ------------------Features------------------
 
@@ -42,10 +46,9 @@ Now, let's do something interesting.
 A tool to send fake ARP packet to modify the ARP cache in your victim's computer.Through this tool, you can:
 
 * Break his network.
-* "Repair" his network. ( in fact, his network is in your power ).【Coming soon】
-* Add a window which says "Big Brother is watching you!" when he open a web page.【Coming soon】
-* Change all the picture in his web page to HUAJI.【Coming soon】
-* Get his passward in http packet.【Coming soon】
+* "Repair" his network. ( in fact, his network is in your power ).
+* Add a window which says "Big Brother is watching you!" when he open a web page.
+* Change all the picture in his web page to HUAJI.
 
 Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launch an attack to your victim to break his network.
 
@@ -105,3 +108,7 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan
 1. 改了下Attacker，断网功能完成
 2. 优化Attacker和Sniffer的代码，删掉了Sniffer_dump
 3. 写了个大致的文档
+
+7.17更新
+
+1. 添加了几个功能

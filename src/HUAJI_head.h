@@ -153,3 +153,24 @@ char* getdev(char *dev, char *errbuf) {
     printf("The net device is %s\n", dev);
     return dev;
 }
+
+int str_replace(char* str,char* str_src, char* str_des){
+    char *ptr = NULL;
+    char buff[65536];
+    char buff2[65536];
+    int i = 0;
+    if(str != NULL)
+        strcpy(buff2, str);
+    else
+        return -1;
+    memset(buff, 0x00, sizeof(buff));
+    while ((ptr = strstr( buff2, str_src)) != 0) {
+        if (ptr - buff2 != 0) memcpy(&buff[i], buff2, ptr - buff2);
+        memcpy(&buff[i + ptr - buff2], str_des, strlen(str_des));
+        i += ptr - buff2 + strlen(str_des);
+        strcpy(buff2, ptr + strlen(str_src));
+    }
+    strcat(buff,buff2);
+    strcpy(str,buff);
+    return 0;
+}
