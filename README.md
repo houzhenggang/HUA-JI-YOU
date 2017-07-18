@@ -20,9 +20,9 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
 A small tool to capturing packet and analyze the data, and you can use pcap filter expression to get specific packet.
 
-You can use `$ ./Sniffer -h` to get help.
+You can use `# ./Sniffer -h` to get help.
 
-usage: `$ ./Sniffer + "[pcap filter expression]"`
+usage: `# ./Sniffer + "[pcap filter expression]"`
 
 [pcap filter expression] format:
 
