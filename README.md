@@ -8,7 +8,7 @@ Dependent package: `libpcap`.
 
 Attention: Please run as **root**!
 
-Some function isn't available when your victim visit the website using HTTPS encryption
+Some function isn't available when your victim visit the website using HTTPS encryption.
 
 LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
@@ -55,5 +55,7 @@ Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launc
 Then enter a number to choose a mode to do some interesting snake operate.
 
 ***Attention: if you don't know how to get your MAC, enter this in command line: `$ ip a`, then you can find your device's MAC and IP address.***
+
+**But, this tool can't modify HTTPS data, so if he visit website using HTTPS encryption, nothing will change.**
 
 ![](/HUAJI.jpg)
