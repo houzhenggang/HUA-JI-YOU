@@ -20,9 +20,9 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
 A small tool to capturing packet and analyze the data, and you can use pcap filter expression to get specific packet.
 
-You can use `./Sniffer -h` to get help.
+You can use `$ ./Sniffer -h` to get help.
 
-usage: `./Sniffer + "[pcap filter expression]"`
+usage: `$ ./Sniffer + "[pcap filter expression]"`
 
 [pcap filter expression] format:
 
@@ -54,6 +54,6 @@ Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launc
 
 Then enter a number to choose a mode to do some interesting snake operate.
 
-***Attention: if you don't know how to get your MAC, enter this in command line: `ip a`, then you can find your device's MAC and IP address.***
+***Attention: if you don't know how to get your MAC, enter this in command line: `$ ip a`, then you can find your device's MAC and IP address.***
 
 ![](/HUAJI.jpg)
