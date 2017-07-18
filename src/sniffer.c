@@ -65,7 +65,8 @@ int main(int argc, char *argv[]) {
     struct in_addr addr_net;
     pcap_t *handle;
     struct bpf_program filter;
-    char filter_app[40];
+    char filter_app[100];
+    u_char ARPpacketforall[42];
 
     /* help informations */
     if (argv[1] != NULL && !strcmp(argv[1], "-h")) {
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
     printf("mask: %s\n", real_mask);
     addr_net.s_addr = net_addr;
     net = inet_ntoa(addr_net);
-    printf("net: %s\n", net);
+    printf("net: %s\n\n", net);
     printf("Opening device\n");
     handle = pcap_open_live(dev, 65536, 1, 1000, errbuf);
     if (!handle) {
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     loading();
-    
+
     /* filtering */
     if (argv[1] != NULL) strcpy(filter_app, argv[1]);
     pcap_compile(handle, &filter, filter_app, 0, *net);
