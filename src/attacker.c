@@ -25,7 +25,6 @@ struct arg2 {
 void *retval;
 pthread_t thread1, thread2, thread3;
 int ret_thread1, ret_thread2, ret_thread3;
-/* end */
 
 /* send packet */
 void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
