@@ -33,6 +33,7 @@ void send_packet(pcap_t *handle, u_char *packet, int packetsize) {
         printf("Packet send failed!\n");
 }
 
+/* send packet to gateway */
 void *startG(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
@@ -42,6 +43,7 @@ void *startG(void *arg) {
     pthread_exit(NULL);
 }
 
+/* send packet to victim */
 void *startV(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
@@ -51,6 +53,7 @@ void *startV(void *arg) {
     pthread_exit(NULL);
 }
 
+/* forward packet */
 void *startF(void *arg) {
     struct arg2 *real_arg =(struct arg2 *)arg;
     ethernet_header *pEther = (ethernet_header *)real_arg->packet;
