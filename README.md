@@ -1,12 +1,12 @@
 # HUA-JI-YOU
 
-A small tool to launch a Man-in-the-middle attack, and HUA JI your victims.
+A small tool to launch a Man-in-the-middle attack.
 
 Operating environment: Linux command line.
 
-Dependent package: `libpcap`.
+Dependent package: `libpcap`, `libnet`.
 
-Attention: Please run as **root**!
+Attention: Please run it as **root!**, because some operation need root authority!
 
 Some function isn't available when your victim visit the website using HTTPS encryption.
 
@@ -16,46 +16,38 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
 ## ------------------Features------------------
 
-### Sniffer
+### HUAJI
 
-A small tool to capturing packet and analyze the data, and you can use pcap filter expression to get specific packet.
+Usage:&emsp;`# ./Attacker + [argv1] + ([argv2])`
 
-You can use `# ./Sniffer -h` to get help.
+[argv1]:
+* `-h`: See help.
+* `-s "[argv2]"`: Open sniffer, and argv2 is a pcap filter expression.
+* `-b`: Break someone's network.
+* `-t`: Get all webpage information your vitcim visited.
 
-usage: `# ./Sniffer + "[pcap filter expression]"`
-
-[pcap filter expression] format:
-
-* `dst [ip]`: Destination ip is [ip].
-* `src [ip]`: Source ip is [ip].
-* `host [ip]`: Source ip is [ip] or destination ip is [ip].
-* `dst port [port]`: Destination port is [port].
-* `src port [port]`: Source port is [port].
-* `port [type]`: ip, ip6, arp, rarp, atalk, aarp, decnet, iso, stp, ipx, etc.
+[argv2]&emsp;(pcap filter format):
+* `ether src [mac]`: source MAC is [mac].
+* `ether dst [mac]`: destination MAC is [mac].
+* `dst [ip]`: destination ip is [ip].
+* `src [ip]`: source ip is [ip].
+* `host [ip]`: source ip is [ip] or destination ip is [ip].
+* `dst port [port]`: destination port is [port].
+* `src port [port]`: source port is [port].
+* `ether [type]`: ip, ip6, arp, rarp, atalk, aarp, decnet, iso, stp, ipx, etc.
 * `[proto type]`: tcp, udp, icmp, etc.
-* `Logical operators`: and, or, not.
+* Logical operators: and, or, not
 
-for more information, please check [here](http://www.tcpdump.org/manpages/pcap-filter.7.html)
+**MODE: Sniff :**
 
-Use this tool to get others'IP or MAC, and choose your victim.
+Use pcap filter expression to get packets, and  analyze the data.
 
-Now, let's do something interesting.
+**MODE: Break :**
 
-### Attacker
+Uea ARP cheating to break your victim's network, and at the same time cheat the gateway to avoid it refrush the ARP table in victim's machine.
 
-A tool to send fake ARP packet to modify the ARP cache in your victim's computer.Through this tool, you can:
+**MODE GET :**
 
-* Break his network.
-* "Repair" his network. ( in fact, his network is in your power ).
-* Add a window which says "Big Brother is watching you!" when he open a web page.
-* Change all the picture in his web page to HUAJI.
-
-Enter your victim's IP, your victim's MAC, and your MAC, then Attacker can launch an attack to your victim to break his network.
-
-Then enter a number to choose a mode to do some interesting snake operate.
-
-***Attention: if you don't know how to get your MAC, enter this in command line: `$ ip a`, then you can find your device's MAC and IP address.***
-
-**But, this tool can't modify HTTPS data, so if he visit website using HTTPS encryption, nothing will change.**
+Launch a Man-in-the-middle attack to your victim, he can self the Internet as usual, but all his net data will go through your computer, and you can get the information of the webpage he visited.
 
 ![](/HUAJI.jpg)
