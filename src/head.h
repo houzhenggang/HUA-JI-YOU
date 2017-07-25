@@ -10,6 +10,8 @@
 #include <netinet/ether.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
 #include <linux/if.h>
 #include <netinet/in.h>
 #include <netdb.h>

