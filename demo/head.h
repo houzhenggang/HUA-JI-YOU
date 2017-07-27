@@ -3,12 +3,23 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <libnet.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <linux/sockios.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netdb.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <linux/tcp.h>
+#include <linux/if_ether.h>
+#include <linux/if_arp.h>
+#include <linux/sockios.h>
 
 /* mode choose */
 
@@ -96,7 +107,28 @@ typedef struct {
     int mode;
 } MITM_info;
 
+typedef struct {
+    u_char type;
+    u_char code;
+    u_short checksum;
+    u_short id;
+    u_short seq_num;
+    u_long timestamp;
+} icmp_header;
+
+/* print mac address */
+extern void print_mac(u_char *mac);
+
+/* print ip address */
+extern void print_ip(u_char *ip);
+
 /* modles */
+
+/* get info of attacker, victim, and geteway */
+extern void Getinfo(MITM_info *arg);
+
+/* start sniff, and analyze the packet */
+extern void Sniffer(const char *filter_exp);
 
 /* send fake ARP packet to gateway and victim */
 extern void Arpspoof(void *ARG);
