@@ -2,7 +2,7 @@
 * MAIN FUNCTION
 * AUTHOR: Yue Pan zxc479773533@gmail.com
 * LICENSE: MIT License, Copyright (c) 2017 Yue Pan.
-* TOTAL: 
+* TOTAL: 770lines
 */
 
 #include "head.h"
