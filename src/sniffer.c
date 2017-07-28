@@ -20,27 +20,6 @@ void print_type(u_short type) {
     }
 }
 
-/* print mac address */
-void print_mac(u_char *mac) {
-    int i;
-    for (i = 0; i < 6; i++) {
-        if (mac[i] < 16) printf("0");
-        printf("%x", mac[i]);
-        if (i < 5) printf(":");
-    }
-    printf("\n");
-}
-
-/* print ip address */
-void print_ip(u_char *ip) {
-    int i;
-    for (i = 0; i < 4; i++) {
-        printf("%d", ip[i]);
-        if (i < 3) printf(".");
-    }
-    printf("\n");
-}
-
 /* print protocol type*/
 void print_protocol(u_char protocol_type) {
     switch (protocol_type) {
@@ -103,9 +82,10 @@ void proc_pkt(u_char *user, const struct pcap_pkthdr *hp, const u_char *packet) 
     }
 }
 
-void Sniffer(char *dev, const char *filter_exp) {
+void Sniffer(const char *filter_exp) {
 
     /* definations */
+    char *dev;
     char errbuf[PCAP_ERRBUF_SIZE];
     u_int mask;
     u_int net_addr;
@@ -116,6 +96,13 @@ void Sniffer(char *dev, const char *filter_exp) {
     struct bpf_program filter;
     char filter_app[100];
 
+    /* start dev */
+    dev = pcap_lookupdev(errbuf);
+    if (dev == NULL) {
+        printf("%s\n", errbuf);
+        exit(1);
+    }
+
     /* start device */
     if (pcap_lookupnet(dev, &net_addr, &mask, errbuf) == -1) {
         printf("%s\n", errbuf); //打印错误信息
@@ -123,18 +110,16 @@ void Sniffer(char *dev, const char *filter_exp) {
     }
     addr_net.s_addr = mask;
     real_mask = inet_ntoa(addr_net);
-    printf("mask: %s\n", real_mask);
+    printf("\nmask: %s\n", real_mask);
     addr_net.s_addr = net_addr;
     net = inet_ntoa(addr_net);
     printf("net: %s\n\n", net);
-    printf("Opening device\n");
     handle = pcap_open_live(dev, 65536, 1, 1000, errbuf);
     if (!handle) {
         printf("%s\n", errbuf);
         printf("If the Problem is \"you don't have permission\", please run this program as root!\n");
         exit(1);
     }
-    loading();
 
     /* filtering */
     if (filter_exp != NULL) strcpy(filter_app, filter_exp);
@@ -142,7 +127,7 @@ void Sniffer(char *dev, const char *filter_exp) {
     pcap_setfilter(handle, &filter);
 
     /* loop capturing */
-    printf("\nstart:\n\n");
+    printf("\nstart sniff:\n\n");
     pcap_loop(handle, -1, proc_pkt, NULL);
 
     /* end */

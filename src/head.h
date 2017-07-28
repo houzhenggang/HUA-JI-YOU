@@ -1,28 +1,27 @@
-#ifndef __HUAJI_H_
-#define __HUAJI_H_
-
+#include <unistd.h>
+#include <pcap.h>
+#include <time.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <net/ethernet.h>
-#include <net/if.h> 
-#include <netinet/ether.h>
-#include <netinet/if_ether.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <netinet/in.h>
-#include <linux/if.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <pcap.h>
-#include <libnet.h>
 #include <unistd.h>
+#include <libnet.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
-#include <pthread.h>
+#include <linux/sockios.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netdb.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <linux/tcp.h>
+#include <linux/if_ether.h>
+#include <linux/if_arp.h>
+#include <linux/sockios.h>
+
+/* mode choose */
 
 /* ethernet type */
 #define EPT_IPv4    0x0800
@@ -33,6 +32,14 @@
 /* protocol type */
 #define PROTOCOL_TCP    0x06
 #define PROTOCOL_UDP    0x11
+
+/* address length */
+#define MAC_ADDR_LEN 6
+#define IP_ADDR_LEN 4
+
+/* arp option */
+#define ARP_REPLY 2
+#define ARP_REQURST 1
 
 /* ethernet head */
 typedef struct {
@@ -88,20 +95,26 @@ typedef struct {
     u_short check_sum;
 } udp_header;
 
-/* information struct */
-struct arg {
+/* MITM information */
+typedef struct {
+    u_char *TARGET_MAC;
+    u_char *ATTACKER_MAC;
+    u_char *GATEWAY_MAC;
+    u_char *TARGET_IP;
+    u_char *GATEWAY_IP;
     char *dev;
-    pcap_t *handle;
-} MITM_arg;
+    char *filter;
+    int mode;
+} MITM_info;
 
-extern u_char TARGET_MAC[6];
-extern u_char ATTACKER_MAC[6];
-extern u_char GATEWAY_MAC[6];
-extern u_char TARGET_IP[4];
-extern u_char GATEWAY_IP[4];
-
-/* print ether type */
-extern void print_type(u_short type);
+typedef struct {
+    u_char type;
+    u_char code;
+    u_short checksum;
+    u_short id;
+    u_short seq_num;
+    u_long timestamp;
+} icmp_header;
 
 /* print mac address */
 extern void print_mac(u_char *mac);
@@ -109,34 +122,16 @@ extern void print_mac(u_char *mac);
 /* print ip address */
 extern void print_ip(u_char *ip);
 
-/* print protocol type*/
-extern void print_protocol(u_char protocol_type);
-
-/* loading delay(just decorations) */
-extern void loading(void);
-
-/* htoi */
-extern int htoi(char h);
-
-/* get mac address */
-extern void get_mac(u_char *mac, char *str);
-
-/* get device */
-extern char* getdev(char *dev, char *errbuf);
-
-/* replace html code */
-extern int str_replace(char* str,char* str_src, char* str_des);
-
-/* start sniff, and analyze the packet */
-extern void Sniffer(char *dev, const char *filter_exp);
+/* modles */
 
 /* get info of attacker, victim, and geteway */
-extern void Getinfo(char *dev, char *errbuf);
+extern void Getinfo(MITM_info *arg);
+
+/* start sniff, and analyze the packet */
+extern void Sniffer(const char *filter_exp);
 
 /* send fake ARP packet to gateway and victim */
-extern void Arpspoof(void *arg);
+extern void Arpspoof(void *ARG);
 
 /* forward packet get from victim and gateway */
-extern int Arpforward(char *arg);
-
-#endif
+extern int forward_packet(void *ARG);

