@@ -19,7 +19,6 @@
 #include <linux/tcp.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
-#include <linux/sockios.h>
 
 /* mode choose */
 
