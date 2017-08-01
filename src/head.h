@@ -134,3 +134,9 @@ extern void Arpspoof(void *ARG);
 
 /* forward packet get from victim and gateway */
 extern int forward_packet(void *ARG);
+
+/* hijack and analyze your victim's DNS */
+extern void DnshijackV(const u_char *dns, int len);
+
+/* hijack and analyze your victim's DNS */
+extern void DnshijackG(const u_char *dns, int len);

