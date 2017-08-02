@@ -14,7 +14,7 @@ LICENSE：MIT License, Copyright (c) 2017 Yue Pan.
 
 *If you find a bug, please write a issue.*
 
-## ------------------Features------------------
+## Features
 
 ### HUAJI
 
@@ -25,6 +25,7 @@ Usage:&emsp;`# ./Attacker + [argv1] + ([argv2])`
 * `-s "[argv2]"`: Open sniffer, and argv2 is a pcap filter expression.
 * `-b "[argv2]"`: Break someone's network. argv2 is time before his network is "repaired". None means infinity.
 * `-t`: Get all webpage information your vitcim visited.
+* `-d`: Lanuch a DNS hijack, and forbid you victim visit *.baidu.com
 
 [argv2]&emsp;(pcap filter format):
 * `ether src [mac]`: source MAC is [mac].
@@ -38,16 +39,20 @@ Usage:&emsp;`# ./Attacker + [argv1] + ([argv2])`
 * `[proto type]`: tcp, udp, icmp, etc.
 * Logical operators: and, or, not
 
-**MODE: Sniff :**
+**MODE: SNIFF :**
 
 Use pcap filter expression to get packets, and  analyze the data.
 
-**MODE: Break :**
+**MODE: BREAK :**
 
 Uea ARP cheating to break your victim's network, and at the same time cheat the gateway to avoid it refrush the ARP table in victim's machine.
 
 **MODE GET :**
 
 Launch a Man-in-the-middle attack to your victim, he can self the Internet as usual, but all his net data will go through your computer, and you can get the information of the webpage he visited.
+
+**MODE DNS HIJACK :**
+
+Lanuch a DNS hijack to your victim, he can self the Internet as usual, but he can't visit all web pages ended with .baidu.com. This is like China's GFW, but based in ARP spoof.
 
 ![](/HUAJI.jpg)

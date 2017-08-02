@@ -40,6 +40,12 @@
 #define ARP_REPLY 2
 #define ARP_REQURST 1
 
+/* modes */
+#define Sniff 1
+#define Break 2
+#define Get 3
+#define Dns 4
+
 /* ethernet head */
 typedef struct {
     u_char DST_mac[6];
@@ -135,8 +141,5 @@ extern void Arpspoof(void *ARG);
 /* forward packet get from victim and gateway */
 extern int forward_packet(void *ARG);
 
-/* hijack and analyze your victim's DNS */
-extern void DnshijackV(const u_char *dns, int len);
-
-/* hijack and analyze your victim's DNS */
-extern void DnshijackG(const u_char *dns, int len);
+/* hijack your victim's DNS */
+extern int DNSHijack(u_char *buf);

