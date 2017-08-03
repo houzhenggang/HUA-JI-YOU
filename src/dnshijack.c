@@ -12,6 +12,7 @@
 #define DNS_A  0x01
 #define DNS_CNAME 0x05
 
+/* DNS packet head */
 typedef struct {
     u_short id;
     u_short tag;

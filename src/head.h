@@ -112,6 +112,7 @@ typedef struct {
     int mode;
 } MITM_info;
 
+/* ICMP packet head */
 typedef struct {
     u_char type;
     u_char code;
@@ -143,3 +144,6 @@ extern int forward_packet(void *ARG);
 
 /* hijack your victim's DNS */
 extern int DNSHijack(u_char *buf);
+
+/* get checksum of a TCP/UDP packet */
+extern int PacketCheckSum(u_char *packet, int len);
