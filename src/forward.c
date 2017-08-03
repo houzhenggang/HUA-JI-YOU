@@ -91,6 +91,7 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
 
+    /* get packet from gateway */
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
         if (mode == Dns && pIpv4->protocol_type == PROTOCOL_UDP) {
             udp_header *pUdp = (udp_header *)(packet + 34);
