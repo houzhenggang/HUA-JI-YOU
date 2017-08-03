@@ -54,7 +54,7 @@ int main(int argc, char const *argv[]) {
         mode = Get;
         printf("MODE: GET!\n\n");
     }
-    else if (argv[1] != NULL && !strcmp(argv[1], "-t")) {
+    else if (argv[1] != NULL && !strcmp(argv[1], "-d")) {
         mode = Dns;
         printf("MODE: DNS HIJACK!\n\n");
     }
