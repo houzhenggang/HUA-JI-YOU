@@ -100,8 +100,8 @@ int DNSHijack(u_char *buf) {
                 memcpy(p, fake_ip, 4);
                 memcpy(netip, p, data_len);
                 inet_ntop(AF_INET, netip, ip, sizeof(struct sockaddr));
-                printf("Domain name: %s\n", aname);
-                printf("IP address: %s\n", ip);
+                //printf("Domain name: %s\n", aname);
+                //printf("IP address: %s\n", ip);
             }
         }
         p += data_len;
