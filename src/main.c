@@ -99,6 +99,7 @@ int main(int argc, char const *argv[]) {
             int time = atoi(argv[2]);
             printf("His network will be \"repaired\" after %d seconds\n", time);
             sleep(time);
+            printf("Now his network is \"repaired\"\n");
         }
         else
             pthread_join(thread1, NULL);
