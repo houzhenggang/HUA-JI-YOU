@@ -86,8 +86,8 @@ int main(int argc, char const *argv[]) {
     MITM_arg.filter = filter_app;
     
     /* multiplythreading */
-    pthread_t thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8;
-    int ret_thread1, ret_thread2, ret_thread3, ret_thread4, ret_thread5, ret_thread6, ret_thread7, ret_thread8;
+    pthread_t thread1, thread2, thread3;
+    int ret_thread1, ret_thread2, ret_thread3;
 
     /* arpspoof */
     printf("ATTACK!\n");
